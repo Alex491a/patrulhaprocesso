@@ -10,20 +10,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Verifica se usuário já está autenticado na sessão
-  useEffect(() => {
-    const authenticated = sessionStorage.getItem('patrol_authenticated') === 'true';
-    setIsAuthenticated(authenticated);
-  }, []);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  // Mostra tela de login se não autenticado
-  if (!isAuthenticated) {
-    return <SimpleLogin onLogin={handleLogin} />;
-  }
+  // IMPORTANTE: Todos os hooks devem ser chamados ANTES de qualquer return condicional
   const {
     reports,
     addReport,
@@ -35,10 +22,25 @@ const Index = () => {
     approvalRate,
   } = usePatrolReports();
 
+  // Verifica se usuário já está autenticado na sessão
+  useEffect(() => {
+    const authenticated = sessionStorage.getItem('patrol_authenticated') === 'true';
+    setIsAuthenticated(authenticated);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
   const handleNewReport = (report: Parameters<typeof addReport>[0]) => {
     addReport(report);
     setActiveTab('reports');
   };
+
+  // Mostra tela de login se não autenticado (return condicional DEPOIS de todos os hooks)
+  if (!isAuthenticated) {
+    return <SimpleLogin onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
