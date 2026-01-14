@@ -66,6 +66,10 @@ export const usePatrolReports = () => {
     return newReport;
   }, []);
 
+  const deleteReport = useCallback((reportId: string) => {
+    setReports((prev) => prev.filter((report) => report.id !== reportId));
+  }, []);
+
   const requirementStats = useMemo((): RequirementStats[] => {
     return DEFAULT_REQUIREMENTS.map((req) => {
       let okCount = 0;
@@ -126,6 +130,7 @@ export const usePatrolReports = () => {
   return {
     reports,
     addReport,
+    deleteReport,
     requirementStats,
     problemsByType,
     totalReports,

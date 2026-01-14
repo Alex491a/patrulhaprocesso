@@ -1,19 +1,35 @@
 import { useState } from 'react';
-import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2 } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { ReportDetailModal } from './ReportDetailModal';
+import { UserRole } from '@/components/auth/SimpleLogin';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ReportsTableProps {
   reports: PatrolReport[];
+  userRole?: UserRole;
+  onDeleteReport?: (reportId: string) => void;
 }
 
-export const ReportsTable = ({ reports }: ReportsTableProps) => {
+export const ReportsTable = ({ reports, userRole, onDeleteReport }: ReportsTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'APPROVED' | 'REJECTED'>('all');
   const [sortField, setSortField] = useState<'date' | 'machine' | 'client'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedReport, setSelectedReport] = useState<PatrolReport | null>(null);
+  const [reportToDelete, setReportToDelete] = useState<PatrolReport | null>(null);
+
+  const isAdmin = userRole === 'admin';
 
   const filteredReports = reports
     .filter((report) => {
@@ -48,6 +64,13 @@ export const ReportsTable = ({ reports }: ReportsTableProps) => {
     }
   };
 
+  const handleDeleteConfirm = () => {
+    if (reportToDelete && onDeleteReport) {
+      onDeleteReport(reportToDelete.id);
+      setReportToDelete(null);
+    }
+  };
+
   const SortIcon = ({ field }: { field: typeof sortField }) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? (
@@ -67,6 +90,7 @@ export const ReportsTable = ({ reports }: ReportsTableProps) => {
               <h3 className="text-lg font-semibold text-foreground">Relatórios de Patrulha</h3>
               <p className="text-sm text-muted-foreground">
                 {filteredReports.length} de {reports.length} relatórios
+                {isAdmin && <span className="ml-2 text-primary font-medium">(Modo Administrador)</span>}
               </p>
             </div>
 
@@ -187,14 +211,25 @@ export const ReportsTable = ({ reports }: ReportsTableProps) => {
                       {report.overallStatus === 'APPROVED' ? 'Aprovado' : 'Rejeitado'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => setSelectedReport(report)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Detalhes
-                    </button>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setSelectedReport(report)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Detalhes
+                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setReportToDelete(report)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Excluir
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -212,6 +247,29 @@ export const ReportsTable = ({ reports }: ReportsTableProps) => {
       {selectedReport && (
         <ReportDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
       )}
+
+      {/* Dialog de confirmação para exclusão */}
+      <AlertDialog open={!!reportToDelete} onOpenChange={() => setReportToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja excluir o relatório <strong>{reportToDelete?.id}</strong>?
+              <br />
+              <span className="text-destructive">Esta ação não pode ser desfeita.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
