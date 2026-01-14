@@ -39,9 +39,13 @@ const Index = () => {
     setUserRole(role);
   };
 
-  const handleNewReport = (report: Parameters<typeof addReport>[0]) => {
-    addReport(report);
-    setActiveTab('reports');
+  const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
+    try {
+      await addReport(report);
+      setActiveTab('reports');
+    } catch (error) {
+      console.error('Erro ao adicionar relatório:', error);
+    }
   };
 
   // Mostra tela de login se não autenticado (return condicional DEPOIS de todos os hooks)

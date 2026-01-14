@@ -18,7 +18,7 @@ import {
 interface ReportsTableProps {
   reports: PatrolReport[];
   userRole?: UserRole;
-  onDeleteReport?: (reportId: string) => void;
+  onDeleteReport?: (reportId: string) => Promise<void>;
 }
 
 export const ReportsTable = ({ reports, userRole, onDeleteReport }: ReportsTableProps) => {
@@ -64,9 +64,13 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport }: ReportsTable
     }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (reportToDelete && onDeleteReport) {
-      onDeleteReport(reportToDelete.id);
+      try {
+        await onDeleteReport(reportToDelete.id);
+      } catch (error) {
+        console.error('Erro ao deletar relatório:', error);
+      }
       setReportToDelete(null);
     }
   };

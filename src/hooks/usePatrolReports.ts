@@ -1,73 +1,128 @@
-import { useState, useCallback, useMemo } from 'react';
-import { PatrolReport, RequirementStats, ProblemByType, DEFAULT_REQUIREMENTS } from '@/types/patrol';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { PatrolReport, RequirementStats, ProblemByType, DEFAULT_REQUIREMENTS, PatrolRequirement } from '@/types/patrol';
+import { Json } from '@/integrations/supabase/types';
 
-// Sample data for demonstration
-const generateSampleData = (): PatrolReport[] => {
-  const machines = ['CNC-01', 'CNC-02', 'TORNO-01', 'FRESA-01', 'RETIFICA-01'];
-  const clients = ['Cliente A', 'Cliente B', 'Cliente C', 'Cliente D'];
-  const auditors = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Oliveira'];
-  const operators = ['Carlos Souza', 'Lucas Lima', 'Fernanda Alves', 'Ricardo Mendes'];
+interface DbPatrolReport {
+  id: string;
+  machine: string;
+  auditor: string;
+  client: string;
+  op: string;
+  date: string;
+  operator: string;
+  requirements: PatrolRequirement[];
+  approved: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-  const reports: PatrolReport[] = [];
-
-  for (let i = 0; i < 25; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 60));
-
-    const requirements = DEFAULT_REQUIREMENTS.map((req) => {
-      const random = Math.random();
-      let status: 'OK' | 'NOK' | 'N/A';
-      if (random > 0.15) {
-        status = 'OK';
-      } else if (random > 0.05) {
-        status = 'NOK';
-      } else {
-        status = 'N/A';
-      }
-
-      return {
-        ...req,
-        status,
-        evidence: status === 'NOK' ? `Evidência do problema #${req.id}` : undefined,
-      };
-    });
-
-    const hasNok = requirements.some((r) => r.status === 'NOK');
-
-    reports.push({
-      id: `RPT-${String(i + 1).padStart(4, '0')}`,
-      machine: machines[Math.floor(Math.random() * machines.length)],
-      itemNumber: `DES-${Math.floor(Math.random() * 9000) + 1000}`,
-      auditors: auditors[Math.floor(Math.random() * auditors.length)],
-      client: clients[Math.floor(Math.random() * clients.length)],
-      opNumber: `OP-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: date.toISOString().split('T')[0],
-      operatorName: operators[Math.floor(Math.random() * operators.length)],
-      operatorRegistry: String(Math.floor(Math.random() * 9000) + 1000),
-      requirements,
-      overallStatus: hasNok ? 'REJECTED' : 'APPROVED',
-      createdAt: date.toISOString(),
-    });
-  }
-
-  return reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-};
+const mapDbToPatrolReport = (dbReport: DbPatrolReport): PatrolReport => ({
+  id: dbReport.id,
+  machine: dbReport.machine,
+  itemNumber: '',
+  auditors: dbReport.auditor,
+  client: dbReport.client,
+  opNumber: dbReport.op,
+  date: dbReport.date,
+  operatorName: dbReport.operator,
+  operatorRegistry: '',
+  requirements: dbReport.requirements,
+  overallStatus: dbReport.approved ? 'APPROVED' : 'REJECTED',
+  createdAt: dbReport.created_at,
+});
 
 export const usePatrolReports = () => {
-  const [reports, setReports] = useState<PatrolReport[]>(generateSampleData);
+  const [reports, setReports] = useState<PatrolReport[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addReport = useCallback((report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
-    const newReport: PatrolReport = {
-      ...report,
-      id: `RPT-${String(Date.now()).slice(-4)}`,
-      createdAt: new Date().toISOString(),
-    };
-    setReports((prev) => [newReport, ...prev]);
-    return newReport;
+  // Carregar relatórios do banco de dados
+  const fetchReports = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('patrol_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar relatórios:', error);
+        return;
+      }
+
+      if (data) {
+        const mappedReports = data.map((dbReport) => 
+          mapDbToPatrolReport(dbReport as unknown as DbPatrolReport)
+        );
+        setReports(mappedReports);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar relatórios:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const deleteReport = useCallback((reportId: string) => {
-    setReports((prev) => prev.filter((report) => report.id !== reportId));
+  // Configurar realtime subscription
+  useEffect(() => {
+    fetchReports();
+
+    const channel = supabase
+      .channel('patrol_reports_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'patrol_reports',
+        },
+        () => {
+          // Recarregar dados quando houver mudanças
+          fetchReports();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchReports]);
+
+  const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
+    const hasNok = report.requirements.some((r) => r.status === 'NOK');
+    
+    const { data, error } = await supabase
+      .from('patrol_reports')
+      .insert([{
+        machine: report.machine,
+        auditor: report.auditors,
+        client: report.client,
+        op: report.opNumber,
+        date: report.date,
+        operator: report.operatorName,
+        requirements: report.requirements as unknown as Json,
+        approved: !hasNok,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar relatório:', error);
+      throw error;
+    }
+
+    return mapDbToPatrolReport(data as unknown as DbPatrolReport);
+  }, []);
+
+  const deleteReport = useCallback(async (reportId: string) => {
+    const { error } = await supabase
+      .from('patrol_reports')
+      .delete()
+      .eq('id', reportId);
+
+    if (error) {
+      console.error('Erro ao deletar relatório:', error);
+      throw error;
+    }
   }, []);
 
   const requirementStats = useMemo((): RequirementStats[] => {
@@ -129,6 +184,7 @@ export const usePatrolReports = () => {
 
   return {
     reports,
+    loading,
     addReport,
     deleteReport,
     requirementStats,
