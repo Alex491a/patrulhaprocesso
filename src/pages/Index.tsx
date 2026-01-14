@@ -1,17 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { NewPatrolForm } from '@/components/form/NewPatrolForm';
 import { usePatrolReports } from '@/hooks/usePatrolReports';
-import { SimpleLogin, UserRole } from '@/components/auth/SimpleLogin';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('inspector');
+  
+  const {
+    user,
+    role,
+    isLoading: authLoading,
+    isAuthenticated,
+    signIn,
+    signUp,
+    signOut,
+  } = useAuth();
 
-  // IMPORTANTE: Todos os hooks devem ser chamados ANTES de qualquer return condicional
   const {
     reports,
     addReport,
@@ -25,21 +34,6 @@ const Index = () => {
     approvalRate,
   } = usePatrolReports();
 
-  // Verifica se usuário já está autenticado na sessão
-  useEffect(() => {
-    const authenticated = sessionStorage.getItem('patrol_authenticated') === 'true';
-    const savedRole = sessionStorage.getItem('patrol_user_role') as UserRole;
-    setIsAuthenticated(authenticated);
-    if (savedRole) {
-      setUserRole(savedRole);
-    }
-  }, []);
-
-  const handleLogin = (role: UserRole) => {
-    setIsAuthenticated(true);
-    setUserRole(role);
-  };
-
   const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
     try {
       await addReport(report);
@@ -49,14 +43,32 @@ const Index = () => {
     }
   };
 
-  // Mostra tela de login se não autenticado (return condicional DEPOIS de todos os hooks)
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth form if not authenticated
   if (!isAuthenticated) {
-    return <SimpleLogin onLogin={handleLogin} />;
+    return <AuthForm onSignIn={signIn} onSignUp={signUp} />;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} userRole={userRole} />
+      <Header 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        userRole={role}
+        userEmail={user?.email}
+        onLogout={signOut}
+      />
 
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'dashboard' && (
@@ -73,7 +85,7 @@ const Index = () => {
         {activeTab === 'reports' && (
           <ReportsTable 
             reports={reports} 
-            userRole={userRole}
+            userRole={role || 'inspector'}
             onDeleteReport={deleteReport}
             onUpdateReport={updateReport}
           />

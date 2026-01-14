@@ -4,7 +4,7 @@ import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { ReportDetailModal } from './ReportDetailModal';
 import { EditReportModal } from './EditReportModal';
-import { UserRole } from '@/components/auth/SimpleLogin';
+import { UserRole } from '@/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogAction,
