@@ -1,12 +1,14 @@
 import { ClipboardCheck, BarChart3, FileText, PlusCircle, LogOut, Shield, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserRole } from '@/components/auth/SimpleLogin';
+import { UserRole } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  userRole?: UserRole;
+  userRole?: UserRole | null;
+  userEmail?: string;
+  onLogout: () => void;
 }
 
 const tabs = [
@@ -15,13 +17,20 @@ const tabs = [
   { id: 'new', label: 'Nova Patrulha', icon: PlusCircle },
 ];
 
-export const Header = ({ activeTab, onTabChange, userRole }: HeaderProps) => {
-  const handleLogout = () => {
-    sessionStorage.removeItem('patrol_authenticated');
-    sessionStorage.removeItem('patrol_user_role');
-    window.location.reload();
-  };
+const getRoleLabel = (role: UserRole | null | undefined): string => {
+  switch (role) {
+    case 'admin':
+      return 'Administrador';
+    case 'supervisor':
+      return 'Supervisor';
+    case 'inspector':
+      return 'Inspetor';
+    default:
+      return 'Sem função';
+  }
+};
 
+export const Header = ({ activeTab, onTabChange, userRole, userEmail, onLogout }: HeaderProps) => {
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4">
@@ -60,23 +69,30 @@ export const Header = ({ activeTab, onTabChange, userRole }: HeaderProps) => {
 
             {/* User info and logout */}
             <div className="flex items-center gap-2 pl-4 border-l border-border">
-              <div className="hidden md:flex items-center gap-2 text-sm">
-                {userRole === 'admin' ? (
-                  <Shield className="w-4 h-4 text-primary" />
-                ) : (
-                  <User className="w-4 h-4 text-muted-foreground" />
+              <div className="hidden md:flex flex-col items-end text-sm">
+                <div className="flex items-center gap-2">
+                  {userRole === 'admin' ? (
+                    <Shield className="w-4 h-4 text-primary" />
+                  ) : (
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <span className={cn(
+                    "font-medium",
+                    userRole === 'admin' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
+                    {getRoleLabel(userRole)}
+                  </span>
+                </div>
+                {userEmail && (
+                  <span className="text-xs text-muted-foreground truncate max-w-32">
+                    {userEmail}
+                  </span>
                 )}
-                <span className={cn(
-                  "font-medium",
-                  userRole === 'admin' ? 'text-primary' : 'text-muted-foreground'
-                )}>
-                  {userRole === 'admin' ? 'Administrador' : 'Inspetor'}
-                </span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleLogout}
+                onClick={onLogout}
                 className="text-muted-foreground hover:text-destructive"
               >
                 <LogOut className="w-4 h-4" />
