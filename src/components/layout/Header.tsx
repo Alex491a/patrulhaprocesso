@@ -15,6 +15,7 @@ const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { id: 'reports', label: 'Relatórios', icon: FileText },
   { id: 'new', label: 'Nova Patrulha', icon: PlusCircle },
+  { id: 'users', label: 'Usuários', icon: Shield, adminOnly: true },
 ];
 
 const getRoleLabel = (role: UserRole | null | undefined): string => {
@@ -47,24 +48,26 @@ export const Header = ({ activeTab, onTabChange, userRole, userEmail, onLogout }
 
           <div className="flex items-center gap-4">
             <nav className="flex items-center gap-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => onTabChange(tab.id)}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                      activeTab === tab.id
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </button>
-                );
-              })}
+              {tabs
+                .filter((tab) => !('adminOnly' in tab) || (tab.adminOnly && userRole === 'admin'))
+                .map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => onTabChange(tab.id)}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                        activeTab === tab.id
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  );
+                })}
             </nav>
 
             {/* User info and logout */}
