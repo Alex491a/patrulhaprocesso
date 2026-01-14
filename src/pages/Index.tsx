@@ -1,12 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { NewPatrolForm } from '@/components/form/NewPatrolForm';
 import { usePatrolReports } from '@/hooks/usePatrolReports';
+import { SimpleLogin } from '@/components/auth/SimpleLogin';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Verifica se usuário já está autenticado na sessão
+  useEffect(() => {
+    const authenticated = sessionStorage.getItem('patrol_authenticated') === 'true';
+    setIsAuthenticated(authenticated);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  // Mostra tela de login se não autenticado
+  if (!isAuthenticated) {
+    return <SimpleLogin onLogin={handleLogin} />;
+  }
   const {
     reports,
     addReport,
