@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown, X, SlidersHorizontal } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { ReportDetailModal } from './ReportDetailModal';
@@ -34,6 +34,9 @@ interface ReportsTableProps {
 export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport }: ReportsTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'APPROVED' | 'REJECTED'>('all');
+  const [auditorFilter, setAuditorFilter] = useState('');
+  const [opFilter, setOpFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [sortField, setSortField] = useState<'date' | 'machine' | 'client'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedReport, setSelectedReport] = useState<PatrolReport | null>(null);
@@ -41,6 +44,9 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
   const [reportToEdit, setReportToEdit] = useState<PatrolReport | null>(null);
 
   const isAdmin = userRole === 'admin';
+
+  // Get unique auditors for filter dropdown
+  const uniqueAuditors = [...new Set(reports.map(r => r.auditors))].filter(Boolean).sort();
 
   const filteredReports = reports
     .filter((report) => {
@@ -51,8 +57,10 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
         report.auditors.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === 'all' || report.overallStatus === statusFilter;
+      const matchesAuditor = !auditorFilter || report.auditors.toLowerCase().includes(auditorFilter.toLowerCase());
+      const matchesOp = !opFilter || report.opNumber.toLowerCase().includes(opFilter.toLowerCase());
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesAuditor && matchesOp;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -131,6 +139,22 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Toggle Advanced Filters */}
+              <Button 
+                variant={showFilters ? "secondary" : "outline"} 
+                size="sm" 
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filtros
+                {(auditorFilter || opFilter) && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                    {[auditorFilter, opFilter].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -143,7 +167,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                 />
               </div>
 
-              {/* Filter */}
+              {/* Status Filter */}
               <div className="relative">
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <select
@@ -158,6 +182,57 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
               </div>
             </div>
           </div>
+
+          {/* Advanced Filters Panel */}
+          {showFilters && (
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-foreground">Filtros Avançados</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAuditorFilter('');
+                    setOpFilter('');
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Limpar filtros
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* OP/Item/Desenho Filter */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Nº Item / Desenho / OP</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: OP-12345"
+                    value={opFilter}
+                    onChange={(e) => setOpFilter(e.target.value)}
+                    className="input-industrial w-full text-sm"
+                  />
+                </div>
+
+                {/* Auditor Filter */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Auditor</label>
+                  <select
+                    value={auditorFilter}
+                    onChange={(e) => setAuditorFilter(e.target.value)}
+                    className="input-industrial w-full text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="">Todos os auditores</option>
+                    {uniqueAuditors.map((auditor) => (
+                      <option key={auditor} value={auditor}>
+                        {auditor}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Table */}
