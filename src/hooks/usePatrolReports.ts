@@ -113,6 +113,29 @@ export const usePatrolReports = () => {
     return mapDbToPatrolReport(data as unknown as DbPatrolReport);
   }, []);
 
+  const updateReport = useCallback(async (report: PatrolReport) => {
+    const hasNok = report.requirements.some((r) => r.status === 'NOK');
+    
+    const { error } = await supabase
+      .from('patrol_reports')
+      .update({
+        machine: report.machine,
+        auditor: report.auditors,
+        client: report.client,
+        op: report.opNumber,
+        date: report.date,
+        operator: report.operatorName,
+        requirements: report.requirements as unknown as Json,
+        approved: !hasNok,
+      })
+      .eq('id', report.id);
+
+    if (error) {
+      console.error('Erro ao atualizar relatório:', error);
+      throw error;
+    }
+  }, []);
+
   const deleteReport = useCallback(async (reportId: string) => {
     const { error } = await supabase
       .from('patrol_reports')
@@ -186,6 +209,7 @@ export const usePatrolReports = () => {
     reports,
     loading,
     addReport,
+    updateReport,
     deleteReport,
     requirementStats,
     problemsByType,

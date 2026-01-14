@@ -15,6 +15,7 @@ const Index = () => {
   const {
     reports,
     addReport,
+    updateReport,
     deleteReport,
     requirementStats,
     problemsByType,
@@ -74,6 +75,7 @@ const Index = () => {
             reports={reports} 
             userRole={userRole}
             onDeleteReport={deleteReport}
+            onUpdateReport={updateReport}
           />
         )}
 
