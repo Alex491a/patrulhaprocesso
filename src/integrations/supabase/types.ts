@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patrol_reports: {
+        Row: {
+          approved: boolean
+          auditor: string
+          client: string
+          created_at: string
+          date: string
+          id: string
+          machine: string
+          op: string
+          operator: string
+          requirements: Json
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          auditor: string
+          client: string
+          created_at?: string
+          date: string
+          id?: string
+          machine: string
+          op: string
+          operator: string
+          requirements?: Json
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          auditor?: string
+          client?: string
+          created_at?: string
+          date?: string
+          id?: string
+          machine?: string
+          op?: string
+          operator?: string
+          requirements?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
