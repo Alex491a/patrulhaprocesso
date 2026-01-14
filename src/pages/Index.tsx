@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { NewPatrolForm } from '@/components/form/NewPatrolForm';
+import { UserManagement } from '@/components/admin/UserManagement';
 import { usePatrolReports } from '@/hooks/usePatrolReports';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthForm } from '@/components/auth/AuthForm';
@@ -92,6 +93,8 @@ const Index = () => {
         )}
 
         {activeTab === 'new' && <NewPatrolForm onSubmit={handleNewReport} />}
+
+        {activeTab === 'users' && role === 'admin' && <UserManagement />}
       </main>
     </div>
   );
