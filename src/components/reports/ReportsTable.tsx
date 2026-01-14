@@ -1,0 +1,217 @@
+import { useState } from 'react';
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings } from 'lucide-react';
+import { PatrolReport } from '@/types/patrol';
+import { cn } from '@/lib/utils';
+import { ReportDetailModal } from './ReportDetailModal';
+
+interface ReportsTableProps {
+  reports: PatrolReport[];
+}
+
+export const ReportsTable = ({ reports }: ReportsTableProps) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'APPROVED' | 'REJECTED'>('all');
+  const [sortField, setSortField] = useState<'date' | 'machine' | 'client'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [selectedReport, setSelectedReport] = useState<PatrolReport | null>(null);
+
+  const filteredReports = reports
+    .filter((report) => {
+      const matchesSearch =
+        report.machine.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.opNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.auditors.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = statusFilter === 'all' || report.overallStatus === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'date') {
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortField === 'machine') {
+        comparison = a.machine.localeCompare(b.machine);
+      } else if (sortField === 'client') {
+        comparison = a.client.localeCompare(b.client);
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: typeof sortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? (
+      <ChevronUp className="w-4 h-4" />
+    ) : (
+      <ChevronDown className="w-4 h-4" />
+    );
+  };
+
+  return (
+    <>
+      <div className="card-elevated overflow-hidden animate-slide-up">
+        {/* Header */}
+        <div className="p-6 border-b border-border">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Relatórios de Patrulha</h3>
+              <p className="text-sm text-muted-foreground">
+                {filteredReports.length} de {reports.length} relatórios
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-industrial pl-10 w-full sm:w-64"
+                />
+              </div>
+
+              {/* Filter */}
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                  className="input-industrial pl-10 pr-8 appearance-none cursor-pointer"
+                >
+                  <option value="all">Todos</option>
+                  <option value="APPROVED">Aprovados</option>
+                  <option value="REJECTED">Rejeitados</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                  ID
+                </th>
+                <th
+                  className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => toggleSort('date')}
+                >
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Data
+                    <SortIcon field="date" />
+                  </div>
+                </th>
+                <th
+                  className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => toggleSort('machine')}
+                >
+                  <div className="flex items-center gap-1">
+                    <Settings className="w-4 h-4" />
+                    Máquina
+                    <SortIcon field="machine" />
+                  </div>
+                </th>
+                <th
+                  className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => toggleSort('client')}
+                >
+                  <div className="flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    Cliente
+                    <SortIcon field="client" />
+                  </div>
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                  OP
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                  Auditor
+                </th>
+                <th className="text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                  Status
+                </th>
+                <th className="text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredReports.map((report) => (
+                <tr key={report.id} className="table-row-hover">
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-mono font-medium text-primary">{report.id}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-foreground">
+                      {new Date(report.date).toLocaleDateString('pt-BR')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-medium text-foreground">{report.machine}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-foreground">{report.client}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-mono text-muted-foreground">{report.opNumber}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-foreground">{report.auditors}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold',
+                        report.overallStatus === 'APPROVED'
+                          ? 'bg-success/10 text-success'
+                          : 'bg-destructive/10 text-destructive'
+                      )}
+                    >
+                      {report.overallStatus === 'APPROVED' ? 'Aprovado' : 'Rejeitado'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => setSelectedReport(report)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Detalhes
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {filteredReports.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum relatório encontrado</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedReport && (
+        <ReportDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
+      )}
+    </>
+  );
+};
