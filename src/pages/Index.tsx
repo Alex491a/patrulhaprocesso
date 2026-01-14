@@ -4,16 +4,18 @@ import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { NewPatrolForm } from '@/components/form/NewPatrolForm';
 import { usePatrolReports } from '@/hooks/usePatrolReports';
-import { SimpleLogin } from '@/components/auth/SimpleLogin';
+import { SimpleLogin, UserRole } from '@/components/auth/SimpleLogin';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('inspector');
 
   // IMPORTANTE: Todos os hooks devem ser chamados ANTES de qualquer return condicional
   const {
     reports,
     addReport,
+    deleteReport,
     requirementStats,
     problemsByType,
     totalReports,
@@ -25,11 +27,16 @@ const Index = () => {
   // Verifica se usuário já está autenticado na sessão
   useEffect(() => {
     const authenticated = sessionStorage.getItem('patrol_authenticated') === 'true';
+    const savedRole = sessionStorage.getItem('patrol_user_role') as UserRole;
     setIsAuthenticated(authenticated);
+    if (savedRole) {
+      setUserRole(savedRole);
+    }
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (role: UserRole) => {
     setIsAuthenticated(true);
+    setUserRole(role);
   };
 
   const handleNewReport = (report: Parameters<typeof addReport>[0]) => {
@@ -44,7 +51,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header activeTab={activeTab} onTabChange={setActiveTab} userRole={userRole} />
 
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'dashboard' && (
@@ -58,7 +65,13 @@ const Index = () => {
           />
         )}
 
-        {activeTab === 'reports' && <ReportsTable reports={reports} />}
+        {activeTab === 'reports' && (
+          <ReportsTable 
+            reports={reports} 
+            userRole={userRole}
+            onDeleteReport={deleteReport}
+          />
+        )}
 
         {activeTab === 'new' && <NewPatrolForm onSubmit={handleNewReport} />}
       </main>

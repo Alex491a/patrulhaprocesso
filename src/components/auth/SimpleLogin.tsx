@@ -9,13 +9,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 // ⚠️ AVISO DE SEGURANÇA: Esta é uma implementação básica com credenciais fixas.
 // NÃO É SEGURO para produção - qualquer pessoa pode ver as credenciais no código-fonte.
 // Para segurança real, use autenticação com backend (Lovable Cloud/Supabase).
-const CREDENTIALS = {
-  login: 'INSPETOR DE LINHA',
-  password: 'IDL2026',
-};
+
+export type UserRole = 'inspector' | 'admin';
+
+const CREDENTIALS = [
+  { login: 'INSPETOR DE LINHA', password: 'IDL2026', role: 'inspector' as UserRole },
+  { login: 'ADMINISTRADOR', password: 'ADM2026', role: 'admin' as UserRole },
+];
 
 interface SimpleLoginProps {
-  onLogin: () => void;
+  onLogin: (role: UserRole) => void;
 }
 
 export const SimpleLogin = ({ onLogin }: SimpleLoginProps) => {
@@ -28,10 +31,15 @@ export const SimpleLogin = ({ onLogin }: SimpleLoginProps) => {
     e.preventDefault();
     setError('');
 
-    if (login.toUpperCase() === CREDENTIALS.login && password === CREDENTIALS.password) {
+    const user = CREDENTIALS.find(
+      (cred) => cred.login === login.toUpperCase() && cred.password === password
+    );
+
+    if (user) {
       // Armazena estado de login na sessão (não persiste após fechar navegador)
       sessionStorage.setItem('patrol_authenticated', 'true');
-      onLogin();
+      sessionStorage.setItem('patrol_user_role', user.role);
+      onLogin(user.role);
     } else {
       setAttempts(prev => prev + 1);
       setError('Login ou senha incorretos. Tente novamente.');
