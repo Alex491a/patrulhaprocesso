@@ -35,10 +35,12 @@ const mapDbToPatrolReport = (dbReport: DbPatrolReport): PatrolReport => ({
 export const usePatrolReports = () => {
   const [reports, setReports] = useState<PatrolReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
 
   // Carregar relatórios do banco de dados
   const fetchReports = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('patrol_reports')
         .select('*')
@@ -54,6 +56,7 @@ export const usePatrolReports = () => {
           mapDbToPatrolReport(dbReport as unknown as DbPatrolReport)
         );
         setReports(mappedReports);
+        setHasFetched(true);
       }
     } catch (err) {
       console.error('Erro ao carregar relatórios:', err);
@@ -62,9 +65,30 @@ export const usePatrolReports = () => {
     }
   }, []);
 
-  // Configurar realtime subscription
+  // Configurar realtime subscription e refetch quando auth state mudar
   useEffect(() => {
-    fetchReports();
+    let isMounted = true;
+
+    // Buscar dados quando o usuário estiver autenticado
+    const tryFetchReports = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && isMounted) {
+        fetchReports();
+      } else if (isMounted) {
+        setLoading(false);
+      }
+    };
+
+    tryFetchReports();
+
+    // Escutar mudanças de autenticação para refazer a busca
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session && isMounted && !hasFetched) {
+          fetchReports();
+        }
+      }
+    );
 
     const channel = supabase
       .channel('patrol_reports_changes')
@@ -77,15 +101,19 @@ export const usePatrolReports = () => {
         },
         () => {
           // Recarregar dados quando houver mudanças
-          fetchReports();
+          if (isMounted) {
+            fetchReports();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      isMounted = false;
+      authSubscription.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [fetchReports]);
+  }, [fetchReports, hasFetched]);
 
   const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
     const hasNok = report.requirements.some((r) => r.status === 'NOK');
