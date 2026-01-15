@@ -69,9 +69,8 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
         
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="inspector">Inspetor</TabsTrigger>
               <TabsTrigger value="register">Registrar</TabsTrigger>
             </TabsList>
             
@@ -121,64 +120,6 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                     'Entrar'
                   )}
                 </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="inspector">
-              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <p className="text-sm text-blue-300 text-center">
-                  🔍 Acesso exclusivo para Inspetores de Linha
-                </p>
-              </div>
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="inspector-email" className="text-slate-200">Email do Inspetor</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="inspector-email"
-                      type="email"
-                      placeholder="inspetor@empresa.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="inspector-password" className="text-slate-200">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="inspector-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    'Acessar como Inspetor'
-                  )}
-                </Button>
-                
-                <p className="text-xs text-slate-400 text-center">
-                  Se você ainda não tem acesso, solicite ao seu supervisor.
-                </p>
               </form>
             </TabsContent>
             
