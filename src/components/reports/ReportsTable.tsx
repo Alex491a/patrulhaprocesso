@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { ReportDetailModal } from './ReportDetailModal';
 import { EditReportModal } from './EditReportModal';
 import { UserRole } from '@/hooks/useAuth';
-import { exportSingleReportToPDF, exportMultipleReportsToPDF } from '@/lib/pdfExport';
-import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface ReportsTableProps {
   reports: PatrolReport[];
@@ -110,27 +102,6 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              {/* Export Button */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <FileDown className="w-4 h-4" />
-                    Exportar PDF
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportMultipleReportsToPDF(filteredReports)}>
-                    Exportar todos ({filteredReports.length})
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportMultipleReportsToPDF(filteredReports.filter(r => r.overallStatus === 'APPROVED'))}>
-                    Apenas aprovados
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportMultipleReportsToPDF(filteredReports.filter(r => r.overallStatus === 'REJECTED'))}>
-                    Apenas rejeitados
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -249,13 +220,6 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => exportSingleReportToPDF(report)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-                        title="Exportar PDF"
-                      >
-                        <FileDown className="w-3.5 h-3.5" />
-                      </button>
                       <button
                         onClick={() => setSelectedReport(report)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
