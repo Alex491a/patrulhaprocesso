@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PatrolReport, RequirementStats, ProblemByType, DEFAULT_REQUIREMENTS, PatrolRequirement } from '@/types/patrol';
 import { Json } from '@/integrations/supabase/types';
@@ -35,7 +35,7 @@ const mapDbToPatrolReport = (dbReport: DbPatrolReport): PatrolReport => ({
 export const usePatrolReports = () => {
   const [reports, setReports] = useState<PatrolReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasFetched, setHasFetched] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Carregar relatórios do banco de dados
   const fetchReports = useCallback(async () => {
@@ -56,7 +56,7 @@ export const usePatrolReports = () => {
           mapDbToPatrolReport(dbReport as unknown as DbPatrolReport)
         );
         setReports(mappedReports);
-        setHasFetched(true);
+        hasFetchedRef.current = true;
       }
     } catch (err) {
       console.error('Erro ao carregar relatórios:', err);
@@ -84,7 +84,7 @@ export const usePatrolReports = () => {
     // Escutar mudanças de autenticação para refazer a busca
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (session && isMounted && !hasFetched) {
+        if (session && isMounted && !hasFetchedRef.current) {
           fetchReports();
         }
       }
@@ -113,7 +113,7 @@ export const usePatrolReports = () => {
       authSubscription.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [fetchReports, hasFetched]);
+  }, [fetchReports]);
 
   const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
     const hasNok = report.requirements.some((r) => r.status === 'NOK');
