@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown, X, SlidersHorizontal, CalendarRange } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { ReportDetailModal } from './ReportDetailModal';
@@ -7,6 +7,10 @@ import { EditReportModal } from './EditReportModal';
 import { UserRole } from '@/hooks/useAuth';
 import { exportSingleReportToPDF, exportMultipleReportsToPDF } from '@/lib/pdfExport';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +40,8 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
   const [statusFilter, setStatusFilter] = useState<'all' | 'APPROVED' | 'REJECTED'>('all');
   const [auditorFilter, setAuditorFilter] = useState('');
   const [opFilter, setOpFilter] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
   const [sortField, setSortField] = useState<'date' | 'machine' | 'client'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -48,6 +54,8 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
   // Get unique auditors for filter dropdown
   const uniqueAuditors = [...new Set(reports.map(r => r.auditors))].filter(Boolean).sort();
 
+  const activeFiltersCount = [auditorFilter, opFilter, startDate, endDate].filter(Boolean).length;
+
   const filteredReports = reports
     .filter((report) => {
       const matchesSearch =
@@ -59,8 +67,12 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
       const matchesStatus = statusFilter === 'all' || report.overallStatus === statusFilter;
       const matchesAuditor = !auditorFilter || report.auditors.toLowerCase().includes(auditorFilter.toLowerCase());
       const matchesOp = !opFilter || report.opNumber.toLowerCase().includes(opFilter.toLowerCase());
+      
+      const reportDate = new Date(report.date);
+      const matchesStartDate = !startDate || reportDate >= startDate;
+      const matchesEndDate = !endDate || reportDate <= endDate;
 
-      return matchesSearch && matchesStatus && matchesAuditor && matchesOp;
+      return matchesSearch && matchesStatus && matchesAuditor && matchesOp && matchesStartDate && matchesEndDate;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -148,9 +160,9 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 Filtros
-                {(auditorFilter || opFilter) && (
+                {activeFiltersCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                    {[auditorFilter, opFilter].filter(Boolean).length}
+                    {activeFiltersCount}
                   </span>
                 )}
               </Button>
@@ -194,6 +206,8 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                   onClick={() => {
                     setAuditorFilter('');
                     setOpFilter('');
+                    setStartDate(undefined);
+                    setEndDate(undefined);
                   }}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
@@ -201,7 +215,63 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                   Limpar filtros
                 </Button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Date Range Filter - Start */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Data Inicial</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-9 text-sm",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarRange className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Date Range Filter - End */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Data Final</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-9 text-sm",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarRange className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
                 {/* OP/Item/Desenho Filter */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Nº Item / Desenho / OP</label>
@@ -210,7 +280,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                     placeholder="Ex: OP-12345"
                     value={opFilter}
                     onChange={(e) => setOpFilter(e.target.value)}
-                    className="input-industrial w-full text-sm"
+                    className="input-industrial w-full text-sm h-9"
                   />
                 </div>
 
@@ -220,7 +290,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                   <select
                     value={auditorFilter}
                     onChange={(e) => setAuditorFilter(e.target.value)}
-                    className="input-industrial w-full text-sm appearance-none cursor-pointer"
+                    className="input-industrial w-full text-sm appearance-none cursor-pointer h-9"
                   >
                     <option value="">Todos os auditores</option>
                     {uniqueAuditors.map((auditor) => (
