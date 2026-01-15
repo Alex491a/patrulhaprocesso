@@ -83,7 +83,7 @@ export const usePatrolReports = () => {
 
     // Escutar mudanças de autenticação para refazer a busca
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         if (session && isMounted && !hasFetchedRef.current) {
           fetchReports();
         }
