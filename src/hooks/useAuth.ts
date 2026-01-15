@@ -54,6 +54,18 @@ export const useAuth = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Check if this is a new browser session (sessionStorage is cleared when browser closes)
+    const isNewBrowserSession = !sessionStorage.getItem('app_session_active');
+    
+    if (isNewBrowserSession) {
+      // Force logout to clear any persisted session from localStorage
+      supabase.auth.signOut({ scope: 'local' }).then(() => {
+        sessionStorage.setItem('app_session_active', 'true');
+      });
+    } else {
+      sessionStorage.setItem('app_session_active', 'true');
+    }
+
     // Failsafe: if the auth SDK hangs for any reason, never keep the UI stuck on loading.
     const failSafeTimer = window.setTimeout(() => {
       if (!isMounted) return;
