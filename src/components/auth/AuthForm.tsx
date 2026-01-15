@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Loader2, Mail, Lock } from 'lucide-react';
+import { validatePassword, getPasswordStrength } from '@/lib/validation';
+import { cn } from '@/lib/utils';
 
 interface AuthFormProps {
   onSignIn: (email: string, password: string) => Promise<any>;
@@ -17,6 +19,10 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [passwordError, setPasswordError] = useState('');
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  const passwordValidation = useMemo(() => validatePassword(password), [password]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +38,17 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
     if (!email || !password) return;
     
     if (password !== confirmPassword) {
+      setPasswordError('As senhas não coincidem');
       return;
     }
 
-    if (password.length < 6) {
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      setPasswordError(validation.message);
       return;
     }
     
+    setPasswordError('');
     setIsLoading(true);
     const result = await onSignUp(email, password);
     setIsLoading(false);
@@ -49,6 +59,10 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
       setConfirmPassword('');
     }
   };
+
+  const isRegisterDisabled = isLoading || 
+    password !== confirmPassword || 
+    !passwordValidation.valid;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
@@ -89,6 +103,7 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                       className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                       required
                       disabled={isLoading}
+                      maxLength={255}
                     />
                   </div>
                 </div>
@@ -106,6 +121,7 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                       className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                       required
                       disabled={isLoading}
+                      maxLength={128}
                     />
                   </div>
                 </div>
@@ -138,6 +154,7 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                       className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                       required
                       disabled={isLoading}
+                      maxLength={255}
                     />
                   </div>
                 </div>
@@ -149,15 +166,45 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                     <Input
                       id="register-password"
                       type="password"
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setPasswordError('');
+                      }}
                       className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                       required
-                      minLength={6}
+                      minLength={8}
+                      maxLength={128}
                       disabled={isLoading}
                     />
                   </div>
+                  
+                  {/* Password strength indicator */}
+                  {password.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className={cn("h-full transition-all", passwordStrength.color)}
+                            style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                          />
+                        </div>
+                        <span className={cn("text-xs font-medium", 
+                          passwordStrength.score <= 2 ? "text-destructive" : 
+                          passwordStrength.score <= 4 ? "text-warning" : "text-success"
+                        )}>
+                          {passwordStrength.label}
+                        </span>
+                      </div>
+                      
+                      {!passwordValidation.valid && (
+                        <p className="text-xs text-slate-400">
+                          {passwordValidation.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -169,21 +216,28 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                       type="password"
                       placeholder="Confirme sua senha"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setPasswordError('');
+                      }}
                       className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                       required
+                      maxLength={128}
                       disabled={isLoading}
                     />
                   </div>
                   {confirmPassword && password !== confirmPassword && (
                     <p className="text-sm text-red-400">As senhas não coincidem</p>
                   )}
+                  {passwordError && (
+                    <p className="text-sm text-red-400">{passwordError}</p>
+                  )}
                 </div>
                 
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoading || password !== confirmPassword || password.length < 6}
+                  disabled={isRegisterDisabled}
                 >
                   {isLoading ? (
                     <>
@@ -194,6 +248,16 @@ export const AuthForm = ({ onSignIn, onSignUp }: AuthFormProps) => {
                     'Criar Conta'
                   )}
                 </Button>
+                
+                <div className="text-xs text-slate-400 space-y-1">
+                  <p className="font-medium">Requisitos da senha:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li className={password.length >= 8 ? "text-success" : ""}>Mínimo 8 caracteres</li>
+                    <li className={/[A-Z]/.test(password) ? "text-success" : ""}>Uma letra maiúscula</li>
+                    <li className={/[a-z]/.test(password) ? "text-success" : ""}>Uma letra minúscula</li>
+                    <li className={/[0-9]/.test(password) ? "text-success" : ""}>Um número</li>
+                  </ul>
+                </div>
                 
                 <p className="text-xs text-slate-400 text-center">
                   Após o registro, um administrador precisará atribuir sua função.
