@@ -20,68 +20,112 @@ export const useAuth = () => {
     isLoading: true,
   });
 
-  useEffect(() => {
-    // Set up auth state listener BEFORE getting session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        
-        if (session?.user) {
-          // Fetch user role
-          const role = await fetchUserRole(session.user.id);
-          setAuthState({
-            user: session.user,
-            session,
-            role,
-            isLoading: false,
-          });
-        } else {
-          setAuthState({
-            user: null,
-            session: null,
-            role: null,
-            isLoading: false,
-          });
-        }
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const role = await fetchUserRole(session.user.id);
-        setAuthState({
-          user: session.user,
-          session,
-          role,
-          isLoading: false,
-        });
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
     try {
-      const { data, error } = await supabase
-        .rpc('get_user_role', { _user_id: userId });
-      
+      const { data, error } = await supabase.rpc('get_user_role', { _user_id: userId });
+
       if (error) {
         console.error('Error fetching role:', error);
         return null;
       }
-      
+
       return data as UserRole | null;
     } catch (error) {
       console.error('Error fetching role:', error);
       return null;
     }
   };
+
+  const fetchUserRoleWithTimeout = async (userId: string, timeoutMs = 5000) => {
+    try {
+      const timeout = new Promise<null>((resolve) => {
+        const t = setTimeout(() => {
+          clearTimeout(t);
+          resolve(null);
+        }, timeoutMs);
+      });
+
+      return await Promise.race([fetchUserRole(userId), timeout]);
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Failsafe: if the auth SDK hangs for any reason, never keep the UI stuck on loading.
+    const failSafeTimer = window.setTimeout(() => {
+      if (!isMounted) return;
+      setAuthState((prev) => (prev.isLoading ? { ...prev, isLoading: false } : prev));
+    }, 7000);
+
+    const updateRoleAsync = async (userId: string) => {
+      const role = await fetchUserRoleWithTimeout(userId);
+      if (!isMounted) return;
+      setAuthState((prev) => (prev.user?.id === userId ? { ...prev, role } : prev));
+    };
+
+    // Set up auth state listener BEFORE getting session
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+
+      if (!isMounted) return;
+      clearTimeout(failSafeTimer);
+
+      if (session?.user) {
+        // IMPORTANT: never block UI waiting for role; fetch it in background.
+        setAuthState({
+          user: session.user,
+          session,
+          role: null,
+          isLoading: false,
+        });
+        void updateRoleAsync(session.user.id);
+      } else {
+        setAuthState({
+          user: null,
+          session: null,
+          role: null,
+          isLoading: false,
+        });
+      }
+    });
+
+    // Get initial session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!isMounted) return;
+        clearTimeout(failSafeTimer);
+
+        if (session?.user) {
+          setAuthState({
+            user: session.user,
+            session,
+            role: null,
+            isLoading: false,
+          });
+          void updateRoleAsync(session.user.id);
+        } else {
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
+        }
+      })
+      .catch((error) => {
+        console.error('getSession error:', error);
+        if (!isMounted) return;
+        clearTimeout(failSafeTimer);
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
+      });
+
+    return () => {
+      isMounted = false;
+      clearTimeout(failSafeTimer);
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signUp = async (email: string, password: string) => {
     try {
