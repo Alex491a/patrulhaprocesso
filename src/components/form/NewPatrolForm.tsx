@@ -3,10 +3,14 @@ import { CheckCircle2, XCircle, Minus, Save, RotateCcw } from 'lucide-react';
 import { PatrolReport, PatrolRequirement, PatrolStatus, DEFAULT_REQUIREMENTS } from '@/types/patrol';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { validatePatrolReport } from '@/lib/validation';
 
 interface NewPatrolFormProps {
   onSubmit: (report: Omit<PatrolReport, 'id' | 'createdAt'>) => void;
 }
+
+const MAX_EVIDENCE_LENGTH = 1000;
+const MAX_FIELD_LENGTH = 200;
 
 export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
   const [formData, setFormData] = useState({
@@ -30,7 +34,9 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Limit input length
+    const maxLength = name === 'opNumber' ? 50 : MAX_FIELD_LENGTH;
+    setFormData((prev) => ({ ...prev, [name]: value.slice(0, maxLength) }));
   };
 
   const handleStatusChange = (id: number, status: PatrolStatus) => {
@@ -44,8 +50,10 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
   };
 
   const handleEvidenceChange = (id: number, evidence: string) => {
+    // Limit evidence length
+    const truncatedEvidence = evidence.slice(0, MAX_EVIDENCE_LENGTH);
     setRequirements((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, evidence } : req))
+      prev.map((req) => (req.id === id ? { ...req, evidence: truncatedEvidence } : req))
     );
   };
 
@@ -72,9 +80,11 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!formData.machine || !formData.client || !formData.opNumber || !formData.auditors) {
-      toast.error('Preencha todos os campos obrigatórios');
+    // Validate with Zod
+    const validation = validatePatrolReport(formData, requirements);
+    
+    if (!validation.valid) {
+      validation.errors.forEach((error) => toast.error(error));
       return;
     }
 
@@ -110,6 +120,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               placeholder="Ex: CNC-01"
               className="input-industrial w-full"
               required
+              maxLength={100}
             />
           </div>
 
@@ -124,6 +135,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               onChange={handleInputChange}
               placeholder="Ex: DES-1234"
               className="input-industrial w-full"
+              maxLength={100}
             />
           </div>
 
@@ -139,6 +151,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               placeholder="Nome do auditor"
               className="input-industrial w-full"
               required
+              maxLength={MAX_FIELD_LENGTH}
             />
           </div>
 
@@ -168,6 +181,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               placeholder="Nome do cliente"
               className="input-industrial w-full"
               required
+              maxLength={MAX_FIELD_LENGTH}
             />
           </div>
 
@@ -183,6 +197,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               placeholder="Ex: OP-1234"
               className="input-industrial w-full"
               required
+              maxLength={50}
             />
           </div>
 
@@ -197,6 +212,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               onChange={handleInputChange}
               placeholder="Nome do operador"
               className="input-industrial w-full"
+              maxLength={MAX_FIELD_LENGTH}
             />
           </div>
 
@@ -211,6 +227,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
               onChange={handleInputChange}
               placeholder="Nº do registro"
               className="input-industrial w-full"
+              maxLength={50}
             />
           </div>
         </div>
@@ -290,7 +307,11 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
                     onChange={(e) => handleEvidenceChange(req.id, e.target.value)}
                     placeholder="Descreva a evidência do problema..."
                     className="input-industrial w-full border-destructive/50 focus:border-destructive"
+                    maxLength={MAX_EVIDENCE_LENGTH}
                   />
+                  <p className="text-xs text-muted-foreground mt-1 text-right">
+                    {(req.evidence || '').length}/{MAX_EVIDENCE_LENGTH}
+                  </p>
                 </div>
               )}
             </div>

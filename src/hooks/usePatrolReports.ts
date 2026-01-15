@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PatrolReport, RequirementStats, ProblemByType, DEFAULT_REQUIREMENTS, PatrolRequirement } from '@/types/patrol';
 import { Json } from '@/integrations/supabase/types';
+import { PatrolRequirementsArraySchema } from '@/lib/validation';
 
 interface DbPatrolReport {
   id: string;
@@ -116,18 +117,25 @@ export const usePatrolReports = () => {
   }, [fetchReports]);
 
   const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
+    // Validate requirements before insert
+    const validationResult = PatrolRequirementsArraySchema.safeParse(report.requirements);
+    if (!validationResult.success) {
+      console.error('Validation error:', validationResult.error);
+      throw new Error('Dados de requisitos inválidos');
+    }
+
     const hasNok = report.requirements.some((r) => r.status === 'NOK');
     
     const { data, error } = await supabase
       .from('patrol_reports')
       .insert([{
-        machine: report.machine,
-        auditor: report.auditors,
-        client: report.client,
-        op: report.opNumber,
+        machine: report.machine.slice(0, 100),
+        auditor: report.auditors.slice(0, 200),
+        client: report.client.slice(0, 200),
+        op: report.opNumber.slice(0, 50),
         date: report.date,
-        operator: report.operatorName,
-        requirements: report.requirements as unknown as Json,
+        operator: report.operatorName.slice(0, 200),
+        requirements: validationResult.data as unknown as Json,
         approved: !hasNok,
       }])
       .select()
