@@ -168,12 +168,30 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      // Clear state immediately for responsive UI
+      setAuthState({
+        user: null,
+        session: null,
+        role: null,
+        isLoading: false,
+      });
+      
+      // Sign out from Supabase with global scope to clear all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
+      
       toast.success('Logout realizado com sucesso');
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error(error.message || 'Erro ao fazer logout');
+      
+      // Even on error, ensure user is logged out locally
+      setAuthState({
+        user: null,
+        session: null,
+        role: null,
+        isLoading: false,
+      });
     }
   };
 
