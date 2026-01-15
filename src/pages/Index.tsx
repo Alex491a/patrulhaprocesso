@@ -24,6 +24,7 @@ const Index = () => {
 
   const {
     reports,
+    loading: reportsLoading,
     addReport,
     updateReport,
     deleteReport,
@@ -35,6 +36,9 @@ const Index = () => {
     approvalRate,
   } = usePatrolReports();
 
+  // Only show loading while auth is loading (not while reports are loading)
+  const isLoading = authLoading;
+
   const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
     try {
       await addReport(report);
@@ -45,7 +49,7 @@ const Index = () => {
   };
 
   // Loading state
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
