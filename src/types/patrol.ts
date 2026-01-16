@@ -9,6 +9,7 @@ export interface PatrolRequirement {
 
 export interface PatrolReport {
   id: string;
+  reportNumber: string;
   machine: string;
   itemNumber: string;
   auditors: string;

@@ -216,7 +216,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
               {filteredReports.map((report) => (
                 <tr key={report.id} className="table-row-hover">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-mono font-medium text-primary">{report.id}</span>
+                    <span className="text-sm font-mono font-medium text-primary">{report.reportNumber}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-foreground">
@@ -314,7 +314,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Você tem certeza que deseja excluir o relatório <strong>{reportToDelete?.id}</strong>?
+              Você tem certeza que deseja excluir o relatório <strong>{reportToDelete?.reportNumber}</strong>?
               <br />
               <span className="text-destructive">Esta ação não pode ser desfeita.</span>
             </AlertDialogDescription>

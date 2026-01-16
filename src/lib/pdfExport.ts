@@ -40,7 +40,7 @@ export const exportSingleReportToPDF = (report: PatrolReport): void => {
   const lineHeight = 7;
 
   const info = [
-    ['ID:', report.id],
+    ['ID:', report.reportNumber],
     ['Data:', formatDate(report.date)],
     ['Máquina:', report.machine],
     ['Cliente:', report.client],
@@ -119,7 +119,7 @@ export const exportSingleReportToPDF = (report: PatrolReport): void => {
     );
   }
 
-  doc.save(`patrulha-${report.id}-${formatDate(report.date).replace(/\//g, '-')}.pdf`);
+  doc.save(`patrulha-${report.reportNumber}-${formatDate(report.date).replace(/\//g, '-')}.pdf`);
 };
 
 export const exportMultipleReportsToPDF = (reports: PatrolReport[]): void => {
@@ -145,7 +145,7 @@ export const exportMultipleReportsToPDF = (reports: PatrolReport[]): void => {
 
   // Reports Table
   const tableData = reports.map(report => [
-    report.id,
+    report.reportNumber,
     formatDate(report.date),
     report.machine,
     report.client,

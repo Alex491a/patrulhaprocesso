@@ -25,6 +25,7 @@ export type Database = {
           machine: string
           op: string
           operator: string
+          report_number: string | null
           requirements: Json
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           machine: string
           op: string
           operator: string
+          report_number?: string | null
           requirements?: Json
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           machine?: string
           op?: string
           operator?: string
+          report_number?: string | null
           requirements?: Json
           updated_at?: string
         }

@@ -81,7 +81,7 @@ export const EditReportModal = ({ report, onSave, onClose }: EditReportModalProp
         <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
           <div>
             <h2 className="text-xl font-bold text-foreground">Editar Relatório</h2>
-            <p className="text-sm text-muted-foreground">{report.id}</p>
+            <p className="text-sm text-muted-foreground">{report.reportNumber}</p>
           </div>
           <button
             onClick={onClose}
