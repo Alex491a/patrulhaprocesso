@@ -33,7 +33,7 @@ export const ReportDetailModal = ({ report, onClose }: ReportDetailModalProps) =
               )}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">{report.id}</h2>
+              <h2 className="text-xl font-bold text-foreground">{report.reportNumber}</h2>
               <p
                 className={cn(
                   'text-sm font-medium',

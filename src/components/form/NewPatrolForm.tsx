@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { validatePatrolReport } from '@/lib/validation';
 
 interface NewPatrolFormProps {
-  onSubmit: (report: Omit<PatrolReport, 'id' | 'createdAt'>) => void;
+  onSubmit: (report: Omit<PatrolReport, 'id' | 'createdAt' | 'reportNumber'>) => void;
 }
 
 const MAX_EVIDENCE_LENGTH = 1000;
@@ -90,7 +90,7 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
 
     const hasNok = requirements.some((r) => r.status === 'NOK');
 
-    const report: Omit<PatrolReport, 'id' | 'createdAt'> = {
+    const report: Omit<PatrolReport, 'id' | 'createdAt' | 'reportNumber'> = {
       ...formData,
       requirements,
       overallStatus: hasNok ? 'REJECTED' : 'APPROVED',

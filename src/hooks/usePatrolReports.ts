@@ -6,6 +6,7 @@ import { PatrolRequirementsArraySchema } from '@/lib/validation';
 
 interface DbPatrolReport {
   id: string;
+  report_number: string;
   machine: string;
   auditor: string;
   client: string;
@@ -20,6 +21,7 @@ interface DbPatrolReport {
 
 const mapDbToPatrolReport = (dbReport: DbPatrolReport): PatrolReport => ({
   id: dbReport.id,
+  reportNumber: dbReport.report_number,
   machine: dbReport.machine,
   itemNumber: '',
   auditors: dbReport.auditor,
@@ -116,7 +118,7 @@ export const usePatrolReports = () => {
     };
   }, [fetchReports]);
 
-  const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt'>) => {
+  const addReport = useCallback(async (report: Omit<PatrolReport, 'id' | 'createdAt' | 'reportNumber'>) => {
     // Validate requirements before insert
     const validationResult = PatrolRequirementsArraySchema.safeParse(report.requirements);
     if (!validationResult.success) {
