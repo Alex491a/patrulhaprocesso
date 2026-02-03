@@ -80,6 +80,8 @@ const Index = () => {
             approvalRate={approvalRate}
             requirementStats={requirementStats}
             problemsByType={problemsByType}
+            reports={reports}
+            userRole={role}
           />
         )}
 

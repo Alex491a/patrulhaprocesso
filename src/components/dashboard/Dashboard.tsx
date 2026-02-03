@@ -3,7 +3,8 @@ import { StatCard } from './StatCard';
 import { RecurrenceTable } from './RecurrenceTable';
 import { ProblemTypeChart } from './ProblemTypeChart';
 import { OverallStatusChart } from './OverallStatusChart';
-import { RequirementStats, ProblemByType } from '@/types/patrol';
+import { InspectorStats } from './InspectorStats';
+import { RequirementStats, ProblemByType, PatrolReport } from '@/types/patrol';
 
 interface DashboardProps {
   totalReports: number;
@@ -12,6 +13,8 @@ interface DashboardProps {
   approvalRate: number;
   requirementStats: RequirementStats[];
   problemsByType: ProblemByType[];
+  reports?: PatrolReport[];
+  userRole?: string;
 }
 
 export const Dashboard = ({
@@ -21,7 +24,11 @@ export const Dashboard = ({
   approvalRate,
   requirementStats,
   problemsByType,
+  reports = [],
+  userRole,
 }: DashboardProps) => {
+  const isAdmin = userRole === 'admin';
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Stats Grid */}
@@ -65,6 +72,11 @@ export const Dashboard = ({
 
       {/* Recurrence Table */}
       <RecurrenceTable stats={requirementStats} />
+
+      {/* Inspector Stats - Admin Only */}
+      {isAdmin && reports.length > 0 && (
+        <InspectorStats reports={reports} />
+      )}
     </div>
   );
 };
