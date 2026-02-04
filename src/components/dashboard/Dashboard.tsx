@@ -4,6 +4,7 @@ import { RecurrenceTable } from './RecurrenceTable';
 import { ProblemTypeChart } from './ProblemTypeChart';
 import { OverallStatusChart } from './OverallStatusChart';
 import { InspectorStats } from './InspectorStats';
+import { MachineStats } from './MachineStats';
 import { RequirementStats, ProblemByType, PatrolReport } from '@/types/patrol';
 
 interface DashboardProps {
@@ -72,6 +73,11 @@ export const Dashboard = ({
 
       {/* Recurrence Table */}
       <RecurrenceTable stats={requirementStats} />
+
+      {/* Machine Stats */}
+      {reports.length > 0 && (
+        <MachineStats reports={reports} />
+      )}
 
       {/* Inspector Stats - Admin Only */}
       {isAdmin && reports.length > 0 && (
