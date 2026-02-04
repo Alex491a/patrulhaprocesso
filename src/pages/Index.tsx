@@ -36,12 +36,9 @@ const Index = () => {
   } = usePatrolReports();
 
   const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
-    try {
-      await addReport(report);
-      setActiveTab('reports');
-    } catch (error) {
-      console.error('Erro ao adicionar relatório:', error);
-    }
+    // Let the error propagate to the form for proper handling
+    await addReport(report);
+    setActiveTab('reports');
   };
 
   // Loading state

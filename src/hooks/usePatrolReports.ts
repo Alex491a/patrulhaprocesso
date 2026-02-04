@@ -128,27 +128,49 @@ export const usePatrolReports = () => {
 
     const hasNok = report.requirements.some((r) => r.status === 'NOK');
     
-    const { data, error } = await supabase
-      .from('patrol_reports')
-      .insert([{
-        machine: report.machine.slice(0, 100),
-        auditor: report.auditors.slice(0, 200),
-        client: report.client.slice(0, 200),
-        op: report.opNumber.slice(0, 50),
-        date: report.date,
-        operator: report.operatorName.slice(0, 200),
-        requirements: validationResult.data as unknown as Json,
-        approved: !hasNok,
-      }])
-      .select()
-      .single();
+    // Retry logic for handling potential duplicate key errors
+    let retries = 3;
+    let lastError: Error | null = null;
+    
+    while (retries > 0) {
+      const { data, error } = await supabase
+        .from('patrol_reports')
+        .insert([{
+          machine: report.machine.slice(0, 100),
+          auditor: report.auditors.slice(0, 200),
+          client: report.client.slice(0, 200),
+          op: report.opNumber.slice(0, 50),
+          date: report.date,
+          operator: report.operatorName.slice(0, 200),
+          requirements: validationResult.data as unknown as Json,
+          approved: !hasNok,
+        }])
+        .select()
+        .single();
 
-    if (error) {
+      if (!error) {
+        console.log('Relatório criado com sucesso:', data);
+        return mapDbToPatrolReport(data as unknown as DbPatrolReport);
+      }
+
+      // If it's a duplicate key error, retry
+      if (error.code === '23505' && error.message.includes('report_number')) {
+        console.warn('Conflito de número de relatório, tentando novamente...', retries - 1, 'tentativas restantes');
+        retries--;
+        lastError = error;
+        // Small delay before retry
+        await new Promise(resolve => setTimeout(resolve, 100));
+        continue;
+      }
+
+      // For other errors, throw immediately
       console.error('Erro ao adicionar relatório:', error);
       throw error;
     }
 
-    return mapDbToPatrolReport(data as unknown as DbPatrolReport);
+    // If we exhausted retries
+    console.error('Erro ao adicionar relatório após múltiplas tentativas:', lastError);
+    throw lastError || new Error('Falha ao criar relatório após múltiplas tentativas');
   }, []);
 
   const updateReport = useCallback(async (report: PatrolReport) => {

@@ -77,8 +77,12 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) return;
 
     // Validate with Zod
     const validation = validatePatrolReport(formData, requirements);
@@ -96,9 +100,18 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
       overallStatus: hasNok ? 'REJECTED' : 'APPROVED',
     };
 
-    onSubmit(report);
-    toast.success('Relatório registrado com sucesso!');
-    handleReset();
+    setIsSubmitting(true);
+    try {
+      await onSubmit(report);
+      toast.success('Relatório registrado com sucesso!');
+      handleReset();
+    } catch (error) {
+      console.error('Erro ao registrar relatório:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao registrar relatório: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -329,9 +342,22 @@ export const NewPatrolForm = ({ onSubmit }: NewPatrolFormProps) => {
           <RotateCcw className="w-4 h-4" />
           Limpar
         </button>
-        <button type="submit" className="btn-primary-gradient flex items-center gap-2">
-          <Save className="w-4 h-4" />
-          Registrar Patrulha
+        <button 
+          type="submit" 
+          className="btn-primary-gradient flex items-center gap-2"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Registrando...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              Registrar Patrulha
+            </>
+          )}
         </button>
       </div>
     </form>
