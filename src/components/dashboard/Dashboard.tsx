@@ -5,6 +5,7 @@ import { ProblemTypeChart } from './ProblemTypeChart';
 import { OverallStatusChart } from './OverallStatusChart';
 import { InspectorStats } from './InspectorStats';
 import { MachineStats } from './MachineStats';
+import { MachineNokChart } from './MachineNokChart';
 import { RequirementStats, ProblemByType, PatrolReport } from '@/types/patrol';
 
 interface DashboardProps {
@@ -74,9 +75,12 @@ export const Dashboard = ({
       {/* Recurrence Table */}
       <RecurrenceTable stats={requirementStats} />
 
-      {/* Machine Stats */}
+      {/* Machine Charts and Stats */}
       {reports.length > 0 && (
-        <MachineStats reports={reports} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <MachineNokChart reports={reports} />
+          <MachineStats reports={reports} />
+        </div>
       )}
 
       {/* Inspector Stats - Admin Only */}
