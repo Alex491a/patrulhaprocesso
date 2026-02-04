@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Settings, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Settings, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 
 interface MachineStatsProps {
@@ -18,7 +19,13 @@ interface MachineData {
   rejectedCount: number;
 }
 
+type SortField = 'totalReports' | 'totalNok' | 'nokRate' | 'rejectedCount';
+type SortOrder = 'asc' | 'desc';
+
 export const MachineStats = ({ reports }: MachineStatsProps) => {
+  const [sortField, setSortField] = useState<SortField>('totalNok');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
   const machineData = useMemo((): MachineData[] => {
     const machineMap = new Map<string, { 
       totalReports: number; 
@@ -38,7 +45,6 @@ export const MachineStats = ({ reports }: MachineStatsProps) => {
         rejectedCount: 0
       };
       
-      // Count NOK items in this report
       const nokCount = report.requirements.filter((r) => r.status === 'NOK').length;
 
       machineMap.set(machine, {
@@ -49,17 +55,20 @@ export const MachineStats = ({ reports }: MachineStatsProps) => {
       });
     });
 
-    return Array.from(machineMap.entries())
-      .map(([name, data]) => ({
-        name,
-        totalReports: data.totalReports,
-        totalNok: data.totalNok,
-        nokRate: data.totalReports > 0 ? (data.totalNok / data.totalReports) : 0,
-        approvedCount: data.approvedCount,
-        rejectedCount: data.rejectedCount,
-      }))
-      .sort((a, b) => b.totalNok - a.totalNok);
-  }, [reports]);
+    const data = Array.from(machineMap.entries()).map(([name, d]) => ({
+      name,
+      totalReports: d.totalReports,
+      totalNok: d.totalNok,
+      nokRate: d.totalReports > 0 ? (d.totalNok / d.totalReports) : 0,
+      approvedCount: d.approvedCount,
+      rejectedCount: d.rejectedCount,
+    }));
+
+    return data.sort((a, b) => {
+      const multiplier = sortOrder === 'desc' ? -1 : 1;
+      return (a[sortField] - b[sortField]) * multiplier;
+    });
+  }, [reports, sortField, sortOrder]);
 
   const totalMachines = machineData.length;
   const totalReportsAll = machineData.reduce((sum, m) => sum + m.totalReports, 0);
@@ -75,6 +84,32 @@ export const MachineStats = ({ reports }: MachineStatsProps) => {
         <CardDescription>
           Visão geral de auditorias e NOKs por máquina. Total de {totalMachines} máquina(s), {totalReportsAll} auditoria(s), {totalNokAll} NOK(s).
         </CardDescription>
+        <div className="flex items-center gap-3 mt-3">
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Ordenar por:</span>
+          </div>
+          <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="totalNok">Total NOK</SelectItem>
+              <SelectItem value="totalReports">Auditorias</SelectItem>
+              <SelectItem value="rejectedCount">Rejeitados</SelectItem>
+              <SelectItem value="nokRate">Média NOK</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Maior → Menor</SelectItem>
+              <SelectItem value="asc">Menor → Maior</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="max-h-[400px] overflow-auto">
