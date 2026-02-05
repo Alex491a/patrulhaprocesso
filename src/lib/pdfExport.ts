@@ -225,6 +225,7 @@ interface DashboardExportData {
   machineStats: { machine: string; totalNok: number; audits: number; rejectedAudits: number; avgNok: number }[];
   inspectorStats?: InspectorExportData[];
   isAdmin?: boolean;
+  selectedMachine?: string | null;
 }
 
 export const exportDashboardToPDF = (data: DashboardExportData): void => {
@@ -232,11 +233,24 @@ export const exportDashboardToPDF = (data: DashboardExportData): void => {
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = 20;
 
-  // Header
+  // Header with optional machine highlight
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text('Dashboard - Patrulha de Processo', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 10;
+  
+  if (data.selectedMachine) {
+    doc.text('Dashboard - Patrulha de Processo', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 10;
+    
+    // Highlighted machine name
+    doc.setFontSize(14);
+    doc.setTextColor(59, 130, 246); // Primary blue color
+    doc.text(`Máquina: ${data.selectedMachine}`, pageWidth / 2, currentY, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    currentY += 8;
+  } else {
+    doc.text('Dashboard - Patrulha de Processo', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 10;
+  }
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -466,6 +480,8 @@ export const exportDashboardToPDF = (data: DashboardExportData): void => {
     );
   }
 
-  const filename = `dashboard-${data.periodLabel.replace(/[\/\s]/g, '-')}-${formatDate(new Date().toISOString()).replace(/\//g, '-')}.pdf`;
+  // Build filename with optional machine
+  const machinePart = data.selectedMachine ? `-${data.selectedMachine}` : '';
+  const filename = `dashboard${machinePart}-${data.periodLabel.replace(/[\/\s]/g, '-')}-${formatDate(new Date().toISOString()).replace(/\//g, '-')}.pdf`;
   doc.save(filename);
 };
