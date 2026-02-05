@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Filter, ChevronDown, ChevronUp, Eye, Calendar, User, Settings, Trash2, Pencil, FileDown } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
+import { formatDateBR, parseDateString } from '@/lib/dateUtils';
 import { ReportDetailModal } from './ReportDetailModal';
 import { EditReportModal } from './EditReportModal';
 import { UserRole } from '@/hooks/useAuth';
@@ -57,7 +58,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
     .sort((a, b) => {
       let comparison = 0;
       if (sortField === 'date') {
-        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        comparison = parseDateString(a.date).getTime() - parseDateString(b.date).getTime();
       } else if (sortField === 'machine') {
         comparison = a.machine.localeCompare(b.machine);
       } else if (sortField === 'client') {
@@ -220,7 +221,7 @@ export const ReportsTable = ({ reports, userRole, onDeleteReport, onUpdateReport
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-foreground">
-                      {new Date(report.date).toLocaleDateString('pt-BR')}
+                      {formatDateBR(report.date)}
                     </span>
                   </td>
                   <td className="px-6 py-4">

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PatrolReport, PatrolRequirement, RequirementStats, ProblemByType } from '@/types/patrol';
+import { formatDateBR, getCurrentDateString } from './dateUtils';
 
 const statusLabels = {
   OK: 'OK',
@@ -8,12 +9,14 @@ const statusLabels = {
   'N/A': 'N/A',
 };
 
+// Use formatDateBR for date-only strings (YYYY-MM-DD) to avoid timezone issues
 const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  // Check if it's an ISO datetime string (contains T or Z)
+  if (dateString.includes('T') || dateString.includes('Z')) {
+    // For datetime strings, use the date part only
+    return formatDateBR(dateString.split('T')[0]);
+  }
+  return formatDateBR(dateString);
 };
 
 export const exportSingleReportToPDF = (report: PatrolReport): void => {

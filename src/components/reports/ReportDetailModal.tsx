@@ -1,6 +1,7 @@
 import { X, Calendar, User, Settings, FileText, CheckCircle2, XCircle, Minus } from 'lucide-react';
 import { PatrolReport } from '@/types/patrol';
 import { cn } from '@/lib/utils';
+import { formatDateBR } from '@/lib/dateUtils';
 
 interface ReportDetailModalProps {
   report: PatrolReport;
@@ -61,7 +62,7 @@ export const ReportDetailModal = ({ report, onClose }: ReportDetailModalProps) =
               <div>
                 <p className="text-xs text-muted-foreground">Data</p>
                 <p className="text-sm font-medium text-foreground">
-                  {new Date(report.date).toLocaleDateString('pt-BR')}
+                  {formatDateBR(report.date)}
                 </p>
               </div>
             </div>
