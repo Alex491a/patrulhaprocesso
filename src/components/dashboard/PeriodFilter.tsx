@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar } from 'lucide-react';
+import { Calendar, Download } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -9,13 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface PeriodFilterProps {
-  onPeriodChange: (startDate: Date | null, endDate: Date | null) => void;
+  onPeriodChange: (startDate: Date | null, endDate: Date | null, periodLabel: string) => void;
+  onExportPDF?: () => void;
 }
 
-export const PeriodFilter = ({ onPeriodChange }: PeriodFilterProps) => {
+export const PeriodFilter = ({ onPeriodChange, onExportPDF }: PeriodFilterProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
   // Generate month options dynamically - last 12 months + current month
@@ -47,7 +49,7 @@ export const PeriodFilter = ({ onPeriodChange }: PeriodFilterProps) => {
     setSelectedPeriod(value);
     const option = periodOptions.find(p => p.value === value);
     if (option) {
-      onPeriodChange(option.start, option.end);
+      onPeriodChange(option.start, option.end, option.label);
     }
   };
 
@@ -61,29 +63,38 @@ export const PeriodFilter = ({ onPeriodChange }: PeriodFilterProps) => {
   return (
     <Card className="bg-card border-border">
       <CardContent className="py-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-5 w-5" />
-            <span className="font-medium">Período:</span>
-          </div>
-          
-          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-full sm:w-[220px]">
-              <SelectValue placeholder="Selecione o período" />
-            </SelectTrigger>
-            <SelectContent>
-              {periodOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-5 w-5" />
+              <span className="font-medium">Período:</span>
+            </div>
+            
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Selecione o período" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {selectedPeriod !== 'all' && (
-            <span className="text-sm text-muted-foreground">
-              {periodLabel}
-            </span>
+            {selectedPeriod !== 'all' && (
+              <span className="text-sm text-muted-foreground">
+                {periodLabel}
+              </span>
+            )}
+          </div>
+
+          {onExportPDF && (
+            <Button onClick={onExportPDF} variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </Button>
           )}
         </div>
       </CardContent>

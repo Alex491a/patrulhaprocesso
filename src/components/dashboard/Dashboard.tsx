@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { FileText, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { RecurrenceTable } from './RecurrenceTable';
@@ -9,6 +9,8 @@ import { MachineStats } from './MachineStats';
 import { MachineNokChart } from './MachineNokChart';
 import { PeriodFilter, filterReportsByPeriod } from './PeriodFilter';
 import { RequirementStats, ProblemByType, PatrolReport, DEFAULT_REQUIREMENTS } from '@/types/patrol';
+import { exportDashboardToPDF } from '@/lib/pdfExport';
+import { toast } from 'sonner';
 
 interface DashboardProps {
   totalReports: number;
@@ -34,10 +36,12 @@ export const Dashboard = ({
   const isAdmin = userRole === 'admin';
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [periodLabel, setPeriodLabel] = useState<string>('Todo o período');
 
-  const handlePeriodChange = (start: Date | null, end: Date | null) => {
+  const handlePeriodChange = (start: Date | null, end: Date | null, label: string) => {
     setStartDate(start);
     setEndDate(end);
+    setPeriodLabel(label);
   };
 
   // Filter reports by selected period
@@ -109,17 +113,62 @@ export const Dashboard = ({
       .sort((a, b) => b.count - a.count);
   }, [filteredReports]);
 
+  // Calculate machine stats for PDF export
+  const machineStats = useMemo(() => {
+    const machineMap = new Map<string, { totalNok: number; audits: number; rejectedAudits: number }>();
+
+    filteredReports.forEach((report) => {
+      const machine = report.machine;
+      const nokCount = report.requirements.filter((r) => r.status === 'NOK').length;
+      const isRejected = report.overallStatus === 'REJECTED';
+
+      const current = machineMap.get(machine) || { totalNok: 0, audits: 0, rejectedAudits: 0 };
+      machineMap.set(machine, {
+        totalNok: current.totalNok + nokCount,
+        audits: current.audits + 1,
+        rejectedAudits: current.rejectedAudits + (isRejected ? 1 : 0),
+      });
+    });
+
+    return Array.from(machineMap.entries())
+      .map(([machine, stats]) => ({
+        machine,
+        ...stats,
+        avgNok: stats.audits > 0 ? stats.totalNok / stats.audits : 0,
+      }))
+      .sort((a, b) => b.totalNok - a.totalNok);
+  }, [filteredReports]);
+
+  const handleExportPDF = useCallback(() => {
+    try {
+      exportDashboardToPDF({
+        periodLabel,
+        totalReports,
+        approvedReports,
+        rejectedReports,
+        approvalRate,
+        requirementStats,
+        problemsByType,
+        machineStats,
+      });
+      toast.success('Dashboard exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar o dashboard');
+    }
+  }, [periodLabel, totalReports, approvedReports, rejectedReports, approvalRate, requirementStats, problemsByType, machineStats]);
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Period Filter */}
-      <PeriodFilter onPeriodChange={handlePeriodChange} />
+      <PeriodFilter onPeriodChange={handlePeriodChange} onExportPDF={handleExportPDF} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total de Relatórios"
           value={totalReports}
-          subtitle={startDate ? 'Período selecionado' : 'Últimos 60 dias'}
+          subtitle={startDate ? 'Período selecionado' : 'Todo o período'}
           icon={FileText}
           variant="default"
         />
