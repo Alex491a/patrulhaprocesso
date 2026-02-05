@@ -139,6 +139,35 @@ export const Dashboard = ({
       .sort((a, b) => b.totalNok - a.totalNok);
   }, [filteredReports]);
 
+  // Calculate inspector stats for PDF export (admin only)
+  const inspectorStats = useMemo(() => {
+    if (!isAdmin) return [];
+
+    const inspectorMap = new Map<string, { totalReports: number; totalNok: number }>();
+
+    filteredReports.forEach((report) => {
+      const auditor = report.auditors.trim();
+      if (!auditor) return;
+
+      const current = inspectorMap.get(auditor) || { totalReports: 0, totalNok: 0 };
+      const nokCount = report.requirements.filter((r) => r.status === 'NOK').length;
+
+      inspectorMap.set(auditor, {
+        totalReports: current.totalReports + 1,
+        totalNok: current.totalNok + nokCount,
+      });
+    });
+
+    return Array.from(inspectorMap.entries())
+      .map(([name, data]) => ({
+        name,
+        totalReports: data.totalReports,
+        totalNok: data.totalNok,
+        nokRate: data.totalReports > 0 ? data.totalNok / data.totalReports : 0,
+      }))
+      .sort((a, b) => b.totalReports - a.totalReports);
+  }, [filteredReports, isAdmin]);
+
   const handleExportPDF = useCallback(() => {
     try {
       exportDashboardToPDF({
@@ -150,13 +179,15 @@ export const Dashboard = ({
         requirementStats,
         problemsByType,
         machineStats,
+        inspectorStats: isAdmin ? inspectorStats : undefined,
+        isAdmin,
       });
       toast.success('Dashboard exportado com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
       toast.error('Erro ao exportar o dashboard');
     }
-  }, [periodLabel, totalReports, approvedReports, rejectedReports, approvalRate, requirementStats, problemsByType, machineStats]);
+  }, [periodLabel, totalReports, approvedReports, rejectedReports, approvalRate, requirementStats, problemsByType, machineStats, inspectorStats, isAdmin]);
 
   return (
     <div className="space-y-8 animate-fade-in">

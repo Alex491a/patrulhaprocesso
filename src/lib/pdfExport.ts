@@ -204,6 +204,13 @@ export const exportMultipleReportsToPDF = (reports: PatrolReport[]): void => {
   doc.save(`relatorios-patrulha-${formatDate(new Date().toISOString()).replace(/\//g, '-')}.pdf`);
 };
 
+interface InspectorExportData {
+  name: string;
+  totalReports: number;
+  totalNok: number;
+  nokRate: number;
+}
+
 interface DashboardExportData {
   periodLabel: string;
   totalReports: number;
@@ -213,6 +220,8 @@ interface DashboardExportData {
   requirementStats: RequirementStats[];
   problemsByType: ProblemByType[];
   machineStats: { machine: string; totalNok: number; audits: number; rejectedAudits: number; avgNok: number }[];
+  inspectorStats?: InspectorExportData[];
+  isAdmin?: boolean;
 }
 
 export const exportDashboardToPDF = (data: DashboardExportData): void => {
@@ -388,6 +397,56 @@ export const exportDashboardToPDF = (data: DashboardExportData): void => {
         },
       });
     }
+  }
+
+  // Inspector Stats (Admin Only)
+  if (data.isAdmin && data.inspectorStats && data.inspectorStats.length > 0) {
+    // Check if we need a new page
+    const currentYCheck = (doc as any).lastAutoTable?.finalY || currentY;
+    if (currentYCheck > 180) {
+      doc.addPage();
+      currentY = 20;
+    } else {
+      currentY = currentYCheck + 10;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Estatísticas por Inspetor', 14, currentY);
+    currentY += 6;
+
+    const inspectorData = data.inspectorStats.map((insp, i) => [
+      (i + 1).toString(),
+      insp.name,
+      insp.totalReports.toString(),
+      insp.totalNok.toString(),
+      insp.nokRate.toFixed(2),
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['#', 'Inspetor', 'Relatórios', 'Total NOK', 'Média NOK/Rel']],
+      body: inspectorData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center' },
+        4: { cellWidth: 30, halign: 'center' },
+      },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      didParseCell: (data) => {
+        if (data.column.index === 4 && data.section === 'body') {
+          const rate = parseFloat(data.cell.raw as string);
+          if (rate > 2) {
+            data.cell.styles.textColor = [239, 68, 68];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+    });
   }
 
   // Footer
