@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,49 +11,40 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 
-export type PeriodType = 'all' | 'last-month' | 'last-3-months' | 'last-6-months' | 'last-12-months' | 'custom';
-
 interface PeriodFilterProps {
   onPeriodChange: (startDate: Date | null, endDate: Date | null) => void;
 }
 
 export const PeriodFilter = ({ onPeriodChange }: PeriodFilterProps) => {
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
+  // Generate month options dynamically - last 12 months + current month
   const periodOptions = useMemo(() => {
     const now = new Date();
-    
-    return [
+    const options = [
       { value: 'all', label: 'Todo o período', start: null, end: null },
-      { 
-        value: 'last-month', 
-        label: format(now, 'MMMM yyyy', { locale: ptBR }),
-        start: startOfMonth(now),
-        end: endOfMonth(now)
-      },
-      { 
-        value: 'last-3-months', 
-        label: 'Últimos 3 meses',
-        start: startOfMonth(subMonths(now, 2)),
-        end: endOfMonth(now)
-      },
-      { 
-        value: 'last-6-months', 
-        label: 'Últimos 6 meses',
-        start: startOfMonth(subMonths(now, 5)),
-        end: endOfMonth(now)
-      },
-      { 
-        value: 'last-12-months', 
-        label: 'Últimos 12 meses',
-        start: startOfMonth(subMonths(now, 11)),
-        end: endOfMonth(now)
-      },
     ];
+
+    // Add individual months (current month + last 11 months = 12 months total)
+    for (let i = 0; i < 12; i++) {
+      const monthDate = subMonths(now, i);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      const monthLabel = format(monthDate, 'MMMM yyyy', { locale: ptBR });
+      
+      options.push({
+        value: `month-${i}`,
+        label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+        start: monthStart,
+        end: monthEnd,
+      });
+    }
+
+    return options;
   }, []);
 
   const handlePeriodChange = (value: string) => {
-    setSelectedPeriod(value as PeriodType);
+    setSelectedPeriod(value);
     const option = periodOptions.find(p => p.value === value);
     if (option) {
       onPeriodChange(option.start, option.end);
@@ -84,7 +74,7 @@ export const PeriodFilter = ({ onPeriodChange }: PeriodFilterProps) => {
             <SelectContent>
               {periodOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  <span className="capitalize">{option.label}</span>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
