@@ -7,7 +7,7 @@ import { OverallStatusChart } from './OverallStatusChart';
 import { InspectorStats } from './InspectorStats';
 import { MachineStats } from './MachineStats';
 import { MachineNokChart } from './MachineNokChart';
-import { PeriodFilter, filterReportsByPeriod } from './PeriodFilter';
+import { PeriodFilter, filterReportsByPeriod, filterReportsByMachine } from './PeriodFilter';
 import { RequirementStats, ProblemByType, PatrolReport, DEFAULT_REQUIREMENTS } from '@/types/patrol';
 import { exportDashboardToPDF } from '@/lib/pdfExport';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ export const Dashboard = ({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [periodLabel, setPeriodLabel] = useState<string>('Todo o período');
+  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
 
   const handlePeriodChange = (start: Date | null, end: Date | null, label: string) => {
     setStartDate(start);
@@ -44,10 +45,27 @@ export const Dashboard = ({
     setPeriodLabel(label);
   };
 
-  // Filter reports by selected period
+  const handleMachineChange = (machine: string | null) => {
+    setSelectedMachine(machine);
+  };
+
+  // Get unique machines from all reports
+  const availableMachines = useMemo(() => {
+    const machineSet = new Set<string>();
+    reports.forEach((report) => {
+      if (report.machine.trim()) {
+        machineSet.add(report.machine.trim());
+      }
+    });
+    return Array.from(machineSet);
+  }, [reports]);
+
+  // Filter reports by selected period and machine
   const filteredReports = useMemo(() => {
-    return filterReportsByPeriod(reports, startDate, endDate);
-  }, [reports, startDate, endDate]);
+    let result = filterReportsByPeriod(reports, startDate, endDate);
+    result = filterReportsByMachine(result, selectedMachine);
+    return result;
+  }, [reports, startDate, endDate, selectedMachine]);
 
   // Recalculate stats based on filtered reports
   const { totalReports, approvedReports, rejectedReports, approvalRate } = useMemo(() => {
@@ -192,14 +210,19 @@ export const Dashboard = ({
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Period Filter */}
-      <PeriodFilter onPeriodChange={handlePeriodChange} onExportPDF={handleExportPDF} />
+      <PeriodFilter 
+        onPeriodChange={handlePeriodChange} 
+        onMachineChange={handleMachineChange}
+        onExportPDF={handleExportPDF} 
+        machines={availableMachines}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total de Relatórios"
           value={totalReports}
-          subtitle={startDate ? 'Período selecionado' : 'Todo o período'}
+          subtitle={selectedMachine || (startDate ? 'Período selecionado' : 'Todo o período')}
           icon={FileText}
           variant="default"
         />
