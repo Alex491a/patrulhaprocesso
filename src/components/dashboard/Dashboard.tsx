@@ -199,13 +199,14 @@ export const Dashboard = ({
         machineStats,
         inspectorStats: isAdmin ? inspectorStats : undefined,
         isAdmin,
+        selectedMachine,
       });
       toast.success('Dashboard exportado com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
       toast.error('Erro ao exportar o dashboard');
     }
-  }, [periodLabel, totalReports, approvedReports, rejectedReports, approvalRate, requirementStats, problemsByType, machineStats, inspectorStats, isAdmin]);
+  }, [periodLabel, totalReports, approvedReports, rejectedReports, approvalRate, requirementStats, problemsByType, machineStats, inspectorStats, isAdmin, selectedMachine]);
 
   return (
     <div className="space-y-8 animate-fade-in">
