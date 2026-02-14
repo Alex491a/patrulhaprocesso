@@ -9,19 +9,20 @@ const statusLabels = {
   'N/A': 'N/A',
 };
 
-// Brand colors
+// TecParts brand colors (green + dark charcoal)
 const COLORS = {
-  primary: [30, 58, 138] as [number, number, number],       // Deep navy blue
-  primaryLight: [59, 130, 246] as [number, number, number],  // Bright blue
-  success: [22, 163, 74] as [number, number, number],        // Green
-  danger: [220, 38, 38] as [number, number, number],         // Red
-  warning: [202, 138, 4] as [number, number, number],        // Amber
-  dark: [30, 41, 59] as [number, number, number],            // Slate dark
-  medium: [100, 116, 139] as [number, number, number],       // Slate medium
-  light: [241, 245, 249] as [number, number, number],        // Slate light
+  primary: [55, 94, 45] as [number, number, number],            // TecParts green dark
+  primaryLight: [74, 122, 61] as [number, number, number],       // TecParts green
+  primaryGlow: [95, 150, 78] as [number, number, number],        // TecParts green lighter
+  success: [74, 122, 61] as [number, number, number],            // Green (matches brand)
+  danger: [180, 40, 40] as [number, number, number],             // Muted red
+  warning: [170, 120, 20] as [number, number, number],           // Amber
+  dark: [45, 45, 45] as [number, number, number],                // Charcoal (logo text)
+  medium: [100, 100, 100] as [number, number, number],           // Medium gray
+  light: [240, 243, 238] as [number, number, number],            // Light green-gray
   white: [255, 255, 255] as [number, number, number],
-  accent: [99, 102, 241] as [number, number, number],        // Indigo
-  headerBg: [15, 23, 42] as [number, number, number],        // Very dark navy
+  accent: [55, 94, 45] as [number, number, number],              // Brand green
+  headerBg: [45, 50, 45] as [number, number, number],            // Dark charcoal-green
 };
 
 const formatDate = (dateString: string): string => {
@@ -31,11 +32,49 @@ const formatDate = (dateString: string): string => {
   return formatDateBR(dateString);
 };
 
+// Load logo as base64 for PDF embedding
+const loadLogoBase64 = (): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      } else {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = '/images/logo-tecparts.jpg';
+  });
+};
+
 // Draw a colored header bar across the page
 const drawHeaderBar = (doc: jsPDF, y: number, height: number) => {
   const pageWidth = doc.internal.pageSize.getWidth();
+  // Gradient effect: dark base + green accent strip
   doc.setFillColor(...COLORS.headerBg);
   doc.rect(0, y, pageWidth, height, 'F');
+  // Green accent at bottom of header
+  doc.setFillColor(...COLORS.primaryLight);
+  doc.rect(0, y + height - 2.5, pageWidth, 2.5, 'F');
+};
+
+// Add logo to the header
+const addLogoToHeader = (doc: jsPDF, logoBase64: string | null, y: number, align: 'left' | 'center' = 'left') => {
+  if (!logoBase64) return;
+  const logoH = 12;
+  const logoW = logoH * 3.5; // approximate aspect ratio
+  let x = 14;
+  if (align === 'center') {
+    x = (doc.internal.pageSize.getWidth() - logoW) / 2;
+  }
+  doc.addImage(logoBase64, 'JPEG', x, y + 2, logoW, logoH);
 };
 
 // Draw a decorative accent line
@@ -66,7 +105,7 @@ const drawStatCard = (
   // Top accent bar
   doc.setFillColor(...color);
   doc.roundedRect(x, y, w, 3, 2, 2, 'F');
-  doc.rect(x, y + 1.5, w, 1.5, 'F'); // Fill gap from rounded corners at bottom of accent
+  doc.rect(x, y + 1.5, w, 1.5, 'F');
 
   // Label
   doc.setFontSize(8);
@@ -83,7 +122,7 @@ const drawStatCard = (
   doc.setTextColor(...COLORS.dark);
 };
 
-// Draw section title with icon-like decoration
+// Draw section title with brand-colored decoration
 const drawSectionTitle = (doc: jsPDF, title: string, y: number): number => {
   doc.setFillColor(...COLORS.primaryLight);
   doc.roundedRect(14, y - 4, 3, 12, 1, 1, 'F');
@@ -113,29 +152,33 @@ const addFooter = (doc: jsPDF, companyName?: string) => {
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.medium);
-    doc.text('Patrulha de Processo — Documento Confidencial', 14, pageHeight - 12);
+    doc.text('TecParts — Patrulha de Processo — Documento Confidencial', 14, pageHeight - 12);
     doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 12, { align: 'right' });
   }
 };
 
 // ===================== SINGLE REPORT EXPORT =====================
 
-export const exportSingleReportToPDF = (report: PatrolReport): void => {
+export const exportSingleReportToPDF = async (report: PatrolReport): Promise<void> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const logoBase64 = await loadLogoBase64();
 
   // Dark header bar
   drawHeaderBar(doc, 0, 40);
 
+  // Logo on left
+  addLogoToHeader(doc, logoBase64, 4, 'left');
+
   // Title on dark background
-  doc.setFontSize(20);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.white);
-  doc.text('Relatório de Patrulha de Processo', pageWidth / 2, 18, { align: 'center' });
+  doc.text('Relatório de Patrulha de Processo', pageWidth / 2 + 15, 18, { align: 'center' });
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 200, 230);
+  doc.setTextColor(200, 220, 200);
   doc.text(`${report.reportNumber}  •  ${formatDate(report.date)}`, pageWidth / 2, 28, { align: 'center' });
 
   // Status badge
@@ -240,17 +283,21 @@ export const exportSingleReportToPDF = (report: PatrolReport): void => {
 
 // ===================== MULTIPLE REPORTS EXPORT =====================
 
-export const exportMultipleReportsToPDF = (reports: PatrolReport[]): void => {
+export const exportMultipleReportsToPDF = async (reports: PatrolReport[]): Promise<void> => {
   const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
+  const logoBase64 = await loadLogoBase64();
 
   // Dark header
   drawHeaderBar(doc, 0, 35);
 
-  doc.setFontSize(18);
+  // Logo on left
+  addLogoToHeader(doc, logoBase64, 2, 'left');
+
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.white);
-  doc.text('Relatórios de Patrulha de Processo', pageWidth / 2, 16, { align: 'center' });
+  doc.text('Relatórios de Patrulha de Processo', pageWidth / 2 + 15, 16, { align: 'center' });
 
   const approved = reports.filter(r => r.overallStatus === 'APPROVED').length;
   const rejected = reports.length - approved;
@@ -258,7 +305,7 @@ export const exportMultipleReportsToPDF = (reports: PatrolReport[]): void => {
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 200, 230);
+  doc.setTextColor(200, 220, 200);
   doc.text(
     `${reports.length} relatórios  •  ${approved} aprovados  •  ${rejected} rejeitados  •  ${approvalRate}% aprovação`,
     pageWidth / 2, 28, { align: 'center' }
@@ -334,23 +381,27 @@ interface DashboardExportData {
   selectedMachine?: string | null;
 }
 
-export const exportDashboardToPDF = (data: DashboardExportData): void => {
+export const exportDashboardToPDF = async (data: DashboardExportData): Promise<void> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = 0;
+  const logoBase64 = await loadLogoBase64();
 
   // ---- COVER HEADER ----
   const headerHeight = data.selectedMachine ? 50 : 42;
   drawHeaderBar(doc, 0, headerHeight);
 
-  doc.setFontSize(20);
+  // Logo on left
+  addLogoToHeader(doc, logoBase64, 4, 'left');
+
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.white);
-  doc.text('Dashboard — Patrulha de Processo', pageWidth / 2, 18, { align: 'center' });
+  doc.text('Dashboard — Patrulha de Processo', pageWidth / 2 + 15, 18, { align: 'center' });
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 200, 230);
+  doc.setTextColor(200, 220, 200);
   doc.text(`Período: ${data.periodLabel}  •  Gerado em: ${formatDate(new Date().toISOString())}`, pageWidth / 2, 28, { align: 'center' });
 
   if (data.selectedMachine) {
