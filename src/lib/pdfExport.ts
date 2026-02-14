@@ -389,7 +389,7 @@ export const exportDashboardToPDF = (data: DashboardExportData): void => {
 
     const problemsData = data.problemsByType.slice(0, 10).map((p, i) => [
       (i + 1).toString(),
-      p.type.length > 55 ? p.type.substring(0, 52) + '...' : p.type,
+      p.type,
       p.count.toString(),
       `${p.percentage.toFixed(1)}%`,
     ]);
@@ -478,7 +478,7 @@ export const exportDashboardToPDF = (data: DashboardExportData): void => {
       .slice(0, 15)
       .map((r, i) => [
         (i + 1).toString(),
-        r.description.length > 50 ? r.description.substring(0, 47) + '...' : r.description,
+        r.description,
         r.okCount.toString(),
         r.nokCount.toString(),
         `${r.recurrenceRate.toFixed(1)}%`,
