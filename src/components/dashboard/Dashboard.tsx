@@ -186,9 +186,9 @@ export const Dashboard = ({
       .sort((a, b) => b.totalReports - a.totalReports);
   }, [filteredReports, isAdmin]);
 
-  const handleExportPDF = useCallback(() => {
+  const handleExportPDF = useCallback(async () => {
     try {
-      exportDashboardToPDF({
+      await exportDashboardToPDF({
         periodLabel,
         totalReports,
         approvedReports,
