@@ -44,23 +44,37 @@ export const usePatrolReports = () => {
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('patrol_reports')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (error) {
-        console.error('Erro ao carregar relatórios:', error);
-        return;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('patrol_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) {
+          console.error('Erro ao carregar relatórios:', error);
+          return;
+        }
+
+        if (data) {
+          allData = allData.concat(data);
+          hasMore = data.length === PAGE_SIZE;
+          from += PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
       }
 
-      if (data) {
-        const mappedReports = data.map((dbReport) => 
-          mapDbToPatrolReport(dbReport as unknown as DbPatrolReport)
-        );
-        setReports(mappedReports);
-        hasFetchedRef.current = true;
-      }
+      const mappedReports = allData.map((dbReport) => 
+        mapDbToPatrolReport(dbReport as unknown as DbPatrolReport)
+      );
+      setReports(mappedReports);
+      hasFetchedRef.current = true;
     } catch (err) {
       console.error('Erro ao carregar relatórios:', err);
     } finally {
