@@ -272,7 +272,7 @@ export const Dashboard = ({
 
       {/* Inspector Stats - Admin Only */}
       {isAdmin && filteredReports.length > 0 && (
-        <InspectorStats reports={filteredReports} />
+        <InspectorStats reports={filteredReports} getRncCountByInspector={getRncCountByInspector} />
       )}
     </div>
   );
