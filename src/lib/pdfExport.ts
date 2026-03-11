@@ -580,25 +580,27 @@ export const exportDashboardToPDF = async (data: DashboardExportData): Promise<v
       insp.name,
       insp.totalReports.toString(),
       insp.totalNok.toString(),
+      insp.rncCount.toString(),
       insp.nokRate.toFixed(2),
     ]);
 
     autoTable(doc, {
       startY: currentY,
-      head: [['#', 'Inspetor', 'N° Auditorias', 'NOK em Auditoria', 'Média NOK/Rel']],
+      head: [['#', 'Inspetor', 'N° Auditorias', 'NOK em Auditoria', 'RNC Informais', 'Média NOK/Rel']],
       body: inspectorData,
       styles: { fontSize: 8, cellPadding: 3, lineColor: [226, 232, 240], lineWidth: 0.2 },
       headStyles: { fillColor: COLORS.headerBg, textColor: COLORS.white, fontStyle: 'bold' },
       columnStyles: {
         0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 78 },
+        1: { cellWidth: 60 },
         2: { cellWidth: 25, halign: 'center' },
         3: { cellWidth: 25, halign: 'center' },
-        4: { cellWidth: 30, halign: 'center' },
+        4: { cellWidth: 25, halign: 'center' },
+        5: { cellWidth: 25, halign: 'center' },
       },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (cellData) => {
-        if (cellData.column.index === 4 && cellData.section === 'body') {
+        if (cellData.column.index === 5 && cellData.section === 'body') {
           const rate = parseFloat(cellData.cell.raw as string);
           if (rate > 2) {
             cellData.cell.styles.textColor = COLORS.danger;
