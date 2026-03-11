@@ -83,6 +83,7 @@ const Index = () => {
             problemsByType={problemsByType}
             reports={reports}
             userRole={role}
+            getRncCountByInspector={getRncCountByInspector}
           />
         )}
 
