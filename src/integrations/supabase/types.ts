@@ -16,22 +16,22 @@ export type Database = {
     Tables: {
       informal_rnc: {
         Row: {
-          count: number
           created_at: string
+          date: string
           id: string
           inspector_name: string
           updated_at: string
         }
         Insert: {
-          count?: number
           created_at?: string
+          date?: string
           id?: string
           inspector_name: string
           updated_at?: string
         }
         Update: {
-          count?: number
           created_at?: string
+          date?: string
           id?: string
           inspector_name?: string
           updated_at?: string
