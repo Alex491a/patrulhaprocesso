@@ -4,7 +4,9 @@ import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { NewPatrolForm } from '@/components/form/NewPatrolForm';
 import { UserManagement } from '@/components/admin/UserManagement';
+import { InformalRncTab } from '@/components/rnc/InformalRncTab';
 import { usePatrolReports } from '@/hooks/usePatrolReports';
+import { useInformalRnc } from '@/hooks/useInformalRnc';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { Loader2 } from 'lucide-react';
@@ -34,6 +36,8 @@ const Index = () => {
     rejectedReports,
     approvalRate,
   } = usePatrolReports();
+
+  const { getRncCountByInspector } = useInformalRnc();
 
   const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
     // Let the error propagate to the form for proper handling
@@ -79,6 +83,7 @@ const Index = () => {
             problemsByType={problemsByType}
             reports={reports}
             userRole={role}
+            getRncCountByInspector={getRncCountByInspector}
           />
         )}
 
@@ -92,6 +97,8 @@ const Index = () => {
         )}
 
         {activeTab === 'new' && <NewPatrolForm onSubmit={handleNewReport} />}
+
+        {activeTab === 'rnc' && <InformalRncTab />}
 
         {activeTab === 'users' && role === 'admin' && <UserManagement />}
       </main>

@@ -21,6 +21,7 @@ interface DashboardProps {
   problemsByType: ProblemByType[];
   reports?: PatrolReport[];
   userRole?: string;
+  getRncCountByInspector?: (inspectorName: string) => number;
 }
 
 export const Dashboard = ({
@@ -32,6 +33,7 @@ export const Dashboard = ({
   problemsByType: allProblemsByType,
   reports = [],
   userRole,
+  getRncCountByInspector,
 }: DashboardProps) => {
   const isAdmin = userRole === 'admin';
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -270,7 +272,7 @@ export const Dashboard = ({
 
       {/* Inspector Stats - Admin Only */}
       {isAdmin && filteredReports.length > 0 && (
-        <InspectorStats reports={filteredReports} />
+        <InspectorStats reports={filteredReports} getRncCountByInspector={getRncCountByInspector} />
       )}
     </div>
   );
