@@ -64,8 +64,8 @@ export const InspectorStats = ({ reports, getRncCountByInspector }: InspectorSta
           <TableHeader>
             <TableRow>
               <TableHead>Inspetor</TableHead>
-              <TableHead className="text-center">Relatórios</TableHead>
-              <TableHead className="text-center">Total NOK</TableHead>
+              <TableHead className="text-center">N° Auditorias</TableHead>
+              <TableHead className="text-center">NOK em Auditoria</TableHead>
               <TableHead className="text-center">RNC Informais</TableHead>
               <TableHead className="text-center">Média NOK/Relatório</TableHead>
             </TableRow>
