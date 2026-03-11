@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 export interface InformalRncRecord {
   id: string;
   inspector_name: string;
-  count: number;
+  date: string;
+  created_at: string;
 }
 
 export const useInformalRnc = () => {
@@ -15,8 +16,8 @@ export const useInformalRnc = () => {
   const fetchRecords = useCallback(async () => {
     const { data, error } = await supabase
       .from('informal_rnc')
-      .select('id, inspector_name, count')
-      .order('inspector_name');
+      .select('id, inspector_name, date, created_at')
+      .order('date', { ascending: false });
 
     if (error) {
       console.error('Erro ao buscar RNC informais:', error);
@@ -30,85 +31,51 @@ export const useInformalRnc = () => {
     fetchRecords();
   }, [fetchRecords]);
 
-  const addInspector = useCallback(async (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-
-    const exists = records.some(
-      (r) => r.inspector_name.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (exists) {
-      toast.error('Inspetor já cadastrado');
-      return;
-    }
+  const addRecord = useCallback(async (inspectorName: string, date: string) => {
+    const trimmed = inspectorName.trim();
+    if (!trimmed || !date) return;
 
     const { error } = await supabase
       .from('informal_rnc')
-      .insert({ inspector_name: trimmed, count: 0 });
+      .insert({ inspector_name: trimmed, date });
 
     if (error) {
-      toast.error('Erro ao adicionar inspetor');
+      toast.error('Erro ao registrar RNC informal');
       console.error(error);
       return;
     }
 
-    toast.success('Inspetor adicionado');
+    toast.success('RNC informal registrada');
     await fetchRecords();
-  }, [records, fetchRecords]);
+  }, [fetchRecords]);
 
-  const incrementCount = useCallback(async (id: string) => {
-    const record = records.find((r) => r.id === id);
-    if (!record) return;
-
+  const deleteRecord = useCallback(async (id: string) => {
     const { error } = await supabase
       .from('informal_rnc')
-      .update({ count: record.count + 1, updated_at: new Date().toISOString() })
+      .delete()
       .eq('id', id);
 
     if (error) {
-      toast.error('Erro ao incrementar RNC');
+      toast.error('Erro ao excluir RNC informal');
       console.error(error);
       return;
     }
 
-    setRecords((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, count: r.count + 1 } : r))
-    );
-  }, [records]);
-
-  const decrementCount = useCallback(async (id: string) => {
-    const record = records.find((r) => r.id === id);
-    if (!record || record.count <= 0) return;
-
-    const { error } = await supabase
-      .from('informal_rnc')
-      .update({ count: record.count - 1, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Erro ao decrementar RNC');
-      console.error(error);
-      return;
-    }
-
-    setRecords((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, count: r.count - 1 } : r))
-    );
-  }, [records]);
+    toast.success('RNC informal excluída');
+    setRecords((prev) => prev.filter((r) => r.id !== id));
+  }, []);
 
   const getRncCountByInspector = useCallback((inspectorName: string): number => {
-    const record = records.find(
+    return records.filter(
       (r) => r.inspector_name.toLowerCase() === inspectorName.toLowerCase()
-    );
-    return record?.count || 0;
+    ).length;
   }, [records]);
 
   return {
     records,
     isLoading,
-    addInspector,
-    incrementCount,
-    decrementCount,
+    addRecord,
+    deleteRecord,
     getRncCountByInspector,
   };
 };
