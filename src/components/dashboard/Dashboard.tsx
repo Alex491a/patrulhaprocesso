@@ -21,6 +21,7 @@ interface DashboardProps {
   problemsByType: ProblemByType[];
   reports?: PatrolReport[];
   userRole?: string;
+  getRncCountByInspector?: (inspectorName: string) => number;
 }
 
 export const Dashboard = ({
