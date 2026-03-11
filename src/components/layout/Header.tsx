@@ -1,4 +1,4 @@
-import { ClipboardCheck, BarChart3, FileText, PlusCircle, LogOut, Shield, User } from 'lucide-react';
+import { ClipboardCheck, BarChart3, FileText, PlusCircle, LogOut, Shield, User, FileWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
