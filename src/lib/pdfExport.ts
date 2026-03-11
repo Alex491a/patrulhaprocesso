@@ -365,6 +365,7 @@ interface InspectorExportData {
   totalReports: number;
   totalNok: number;
   nokRate: number;
+  rncCount: number;
 }
 
 interface DashboardExportData {
