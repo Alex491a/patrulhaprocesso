@@ -98,6 +98,8 @@ const Index = () => {
 
         {activeTab === 'new' && <NewPatrolForm onSubmit={handleNewReport} />}
 
+        {activeTab === 'rnc' && <InformalRncTab />}
+
         {activeTab === 'users' && role === 'admin' && <UserManagement />}
       </main>
     </div>
