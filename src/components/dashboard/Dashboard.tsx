@@ -184,9 +184,10 @@ export const Dashboard = ({
         totalReports: data.totalReports,
         totalNok: data.totalNok,
         nokRate: data.totalReports > 0 ? data.totalNok / data.totalReports : 0,
+        rncCount: getRncCountByInspector ? getRncCountByInspector(name) : 0,
       }))
       .sort((a, b) => b.totalReports - a.totalReports);
-  }, [filteredReports, isAdmin]);
+  }, [filteredReports, isAdmin, getRncCountByInspector]);
 
   const handleExportPDF = useCallback(async () => {
     try {
