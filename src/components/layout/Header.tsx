@@ -22,6 +22,10 @@ const tabs = [{
   label: 'Nova Patrulha',
   icon: PlusCircle
 }, {
+  id: 'rnc',
+  label: 'RNC Informal',
+  icon: FileWarning
+}, {
   id: 'users',
   label: 'Usuários',
   icon: Shield,

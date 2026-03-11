@@ -37,6 +37,8 @@ const Index = () => {
     approvalRate,
   } = usePatrolReports();
 
+  const { getRncCountByInspector } = useInformalRnc();
+
   const handleNewReport = async (report: Parameters<typeof addReport>[0]) => {
     // Let the error propagate to the form for proper handling
     await addReport(report);
