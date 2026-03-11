@@ -584,7 +584,7 @@ export const exportDashboardToPDF = async (data: DashboardExportData): Promise<v
 
     autoTable(doc, {
       startY: currentY,
-      head: [['#', 'Inspetor', 'Relatórios', 'Total NOK', 'Média NOK/Rel']],
+      head: [['#', 'Inspetor', 'N° Auditorias', 'NOK em Auditoria', 'Média NOK/Rel']],
       body: inspectorData,
       styles: { fontSize: 8, cellPadding: 3, lineColor: [226, 232, 240], lineWidth: 0.2 },
       headStyles: { fillColor: COLORS.headerBg, textColor: COLORS.white, fontStyle: 'bold' },
