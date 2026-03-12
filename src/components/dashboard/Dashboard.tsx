@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { FileText, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { InformalRncRecord } from '@/hooks/useInformalRnc';
 import { StatCard } from './StatCard';
 import { RecurrenceTable } from './RecurrenceTable';
 import { ProblemTypeChart } from './ProblemTypeChart';
@@ -22,6 +23,7 @@ interface DashboardProps {
   reports?: PatrolReport[];
   userRole?: string;
   getRncCountByInspector?: (inspectorName: string) => number;
+  informalRncRecords?: InformalRncRecord[];
 }
 
 export const Dashboard = ({
@@ -34,6 +36,7 @@ export const Dashboard = ({
   reports = [],
   userRole,
   getRncCountByInspector,
+  informalRncRecords = [],
 }: DashboardProps) => {
   const isAdmin = userRole === 'admin';
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -159,6 +162,20 @@ export const Dashboard = ({
       .sort((a, b) => b.totalNok - a.totalNok);
   }, [filteredReports]);
 
+  // Filter informal RNC records by the same period
+  const getFilteredRncCountByInspector = useCallback((inspectorName: string): number => {
+    return informalRncRecords.filter((r) => {
+      const nameMatch = r.inspector_name.toLowerCase() === inspectorName.toLowerCase();
+      if (!nameMatch) return false;
+
+      if (startDate && endDate) {
+        const recordDate = new Date(r.date + 'T00:00:00');
+        return recordDate >= startDate && recordDate <= endDate;
+      }
+      return true;
+    }).length;
+  }, [informalRncRecords, startDate, endDate]);
+
   // Calculate inspector stats for PDF export (admin only)
   const inspectorStats = useMemo(() => {
     if (!isAdmin) return [];
@@ -184,10 +201,10 @@ export const Dashboard = ({
         totalReports: data.totalReports,
         totalNok: data.totalNok,
         nokRate: data.totalReports > 0 ? data.totalNok / data.totalReports : 0,
-        rncCount: getRncCountByInspector ? getRncCountByInspector(name) : 0,
+        rncCount: getFilteredRncCountByInspector(name),
       }))
       .sort((a, b) => b.totalReports - a.totalReports);
-  }, [filteredReports, isAdmin, getRncCountByInspector]);
+  }, [filteredReports, isAdmin, getFilteredRncCountByInspector]);
 
   const handleExportPDF = useCallback(async () => {
     try {
@@ -273,7 +290,7 @@ export const Dashboard = ({
 
       {/* Inspector Stats - Admin Only */}
       {isAdmin && filteredReports.length > 0 && (
-        <InspectorStats reports={filteredReports} getRncCountByInspector={getRncCountByInspector} />
+        <InspectorStats reports={filteredReports} getRncCountByInspector={getFilteredRncCountByInspector} />
       )}
     </div>
   );
