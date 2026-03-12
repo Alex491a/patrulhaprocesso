@@ -163,18 +163,26 @@ export const Dashboard = ({
   }, [filteredReports]);
 
   // Filter informal RNC records by the same period
-  const getFilteredRncCountByInspector = useCallback((inspectorName: string): number => {
+  const filteredRncRecords = useMemo(() => {
+    if (!startDate || !endDate) return informalRncRecords;
     return informalRncRecords.filter((r) => {
-      const nameMatch = r.inspector_name.toLowerCase() === inspectorName.toLowerCase();
-      if (!nameMatch) return false;
-
-      if (startDate && endDate) {
-        const recordDate = new Date(r.date + 'T00:00:00');
-        return recordDate >= startDate && recordDate <= endDate;
-      }
-      return true;
-    }).length;
+      const recordDate = new Date(r.date + 'T00:00:00');
+      return recordDate >= startDate && recordDate <= endDate;
+    });
   }, [informalRncRecords, startDate, endDate]);
+
+  // Get unique inspector names from filtered informal RNC records
+  const filteredRncInspectorNames = useMemo(() => {
+    const names = new Set<string>();
+    filteredRncRecords.forEach((r) => names.add(r.inspector_name.trim()));
+    return Array.from(names);
+  }, [filteredRncRecords]);
+
+  const getFilteredRncCountByInspector = useCallback((inspectorName: string): number => {
+    return filteredRncRecords.filter(
+      (r) => r.inspector_name.toLowerCase() === inspectorName.toLowerCase()
+    ).length;
+  }, [filteredRncRecords]);
 
   // Calculate inspector stats for PDF export (admin only)
   const inspectorStats = useMemo(() => {

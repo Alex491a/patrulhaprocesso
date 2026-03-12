@@ -35,6 +35,13 @@ export const InspectorStats = ({ reports, getRncCountByInspector, rncInspectorNa
       });
     });
 
+    // Add inspectors that only have informal RNCs in the filtered period
+    rncInspectorNames.forEach((name) => {
+      if (!inspectorMap.has(name)) {
+        inspectorMap.set(name, { totalReports: 0, totalNok: 0 });
+      }
+    });
+
     return Array.from(inspectorMap.entries())
       .map(([name, data]) => ({
         name,
@@ -43,7 +50,7 @@ export const InspectorStats = ({ reports, getRncCountByInspector, rncInspectorNa
         nokRate: data.totalReports > 0 ? (data.totalNok / data.totalReports) : 0,
       }))
       .sort((a, b) => b.totalReports - a.totalReports);
-  }, [reports]);
+  }, [reports, rncInspectorNames]);
 
   const totalInspectors = inspectorData.length;
   const totalReportsAll = inspectorData.reduce((sum, i) => sum + i.totalReports, 0);
