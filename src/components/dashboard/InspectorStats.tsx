@@ -18,7 +18,7 @@ interface InspectorData {
   nokRate: number;
 }
 
-export const InspectorStats = ({ reports, getRncCountByInspector }: InspectorStatsProps) => {
+export const InspectorStats = ({ reports, getRncCountByInspector, rncInspectorNames = [] }: InspectorStatsProps) => {
   const inspectorData = useMemo((): InspectorData[] => {
     const inspectorMap = new Map<string, { totalReports: number; totalNok: number }>();
 
