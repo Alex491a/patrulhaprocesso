@@ -8,6 +8,7 @@ import { PatrolReport } from '@/types/patrol';
 interface InspectorStatsProps {
   reports: PatrolReport[];
   getRncCountByInspector?: (inspectorName: string) => number;
+  rncInspectorNames?: string[];
 }
 
 interface InspectorData {
