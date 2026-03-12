@@ -8,6 +8,7 @@ import { PatrolReport } from '@/types/patrol';
 interface InspectorStatsProps {
   reports: PatrolReport[];
   getRncCountByInspector?: (inspectorName: string) => number;
+  rncInspectorNames?: string[];
 }
 
 interface InspectorData {
@@ -17,7 +18,7 @@ interface InspectorData {
   nokRate: number;
 }
 
-export const InspectorStats = ({ reports, getRncCountByInspector }: InspectorStatsProps) => {
+export const InspectorStats = ({ reports, getRncCountByInspector, rncInspectorNames = [] }: InspectorStatsProps) => {
   const inspectorData = useMemo((): InspectorData[] => {
     const inspectorMap = new Map<string, { totalReports: number; totalNok: number }>();
 
@@ -34,6 +35,13 @@ export const InspectorStats = ({ reports, getRncCountByInspector }: InspectorSta
       });
     });
 
+    // Add inspectors that only have informal RNCs in the filtered period
+    rncInspectorNames.forEach((name) => {
+      if (!inspectorMap.has(name)) {
+        inspectorMap.set(name, { totalReports: 0, totalNok: 0 });
+      }
+    });
+
     return Array.from(inspectorMap.entries())
       .map(([name, data]) => ({
         name,
@@ -42,7 +50,7 @@ export const InspectorStats = ({ reports, getRncCountByInspector }: InspectorSta
         nokRate: data.totalReports > 0 ? (data.totalNok / data.totalReports) : 0,
       }))
       .sort((a, b) => b.totalReports - a.totalReports);
-  }, [reports]);
+  }, [reports, rncInspectorNames]);
 
   const totalInspectors = inspectorData.length;
   const totalReportsAll = inspectorData.reduce((sum, i) => sum + i.totalReports, 0);
