@@ -23,6 +23,7 @@ interface DashboardProps {
   reports?: PatrolReport[];
   userRole?: string;
   getRncCountByInspector?: (inspectorName: string) => number;
+  informalRncRecords?: InformalRncRecord[];
 }
 
 export const Dashboard = ({
