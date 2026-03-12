@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { FileText, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { InformalRncRecord } from '@/hooks/useInformalRnc';
 import { StatCard } from './StatCard';
 import { RecurrenceTable } from './RecurrenceTable';
 import { ProblemTypeChart } from './ProblemTypeChart';
