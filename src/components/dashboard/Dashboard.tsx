@@ -36,6 +36,7 @@ export const Dashboard = ({
   reports = [],
   userRole,
   getRncCountByInspector,
+  informalRncRecords = [],
 }: DashboardProps) => {
   const isAdmin = userRole === 'admin';
   const [startDate, setStartDate] = useState<Date | null>(null);
